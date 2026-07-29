@@ -34,10 +34,7 @@ public void Save_FutureDateOfBirth_ThrowsValidationException()
 {
     var info = CreateUserInfo(dateOfBirth: FutureDate);
 
-    var exception = Assert.Throws<ValidationException>(
-        () => _service.Save(info));
-
-    Assert.Equal("Invalid date of birth", exception.Message);
+    Assert.Throws<ValidationException>(() => _service.Save(info));
 }
 
 [Fact]

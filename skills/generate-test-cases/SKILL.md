@@ -22,10 +22,11 @@ Phân tích mã nguồn và lập danh sách test case cần viết cho method h
 
 ### Bước 1: Đọc quy tắc và phân tích ngữ cảnh
 
-1. **Đọc quy tắc** trong thư mục `./rules/general/` (xem phần Tham chiếu quy tắc bên dưới). Các quy tắc này dùng quy ước C# và xUnit.
-2. **Đọc đối tượng cần phân tích**: file nguồn, class hoặc method đã chỉ định.
-3. **Đọc dependency**: theo các import để đọc DTO, entity, enum và kiểu dữ liệu mà đối tượng sử dụng, theo quy tắc `code-context-analysis`.
-4. **Kiểm tra test hiện có**: tìm test class đã bao phủ đối tượng này theo rule `existing-test-awareness`. Nếu có, đọc toàn bộ và chỉ tập trung vào hành vi chưa được bao phủ.
+1. **Đọc quy tắc chung** trong thư mục `./rules/general/` (xem phần Tham chiếu quy tắc bên dưới).
+2. **Đọc quy tắc C#** trong `./rules/csharp/xunit.md` khi target là file `.cs` hoặc dự án có `.csproj` hay `.sln`.
+3. **Đọc đối tượng cần phân tích**: file nguồn, class hoặc method đã chỉ định.
+4. **Đọc dependency**: theo các import để đọc DTO, entity, enum và kiểu dữ liệu mà đối tượng sử dụng, theo quy tắc `code-context-analysis`.
+5. **Kiểm tra test hiện có**: tìm test class đã bao phủ đối tượng này theo rule `existing-test-awareness`. Nếu có, đọc toàn bộ và chỉ tập trung vào hành vi chưa được bao phủ.
 
 ### Bước 2: Tạo test case
 
@@ -103,7 +104,7 @@ Bước 2: Agent xuất:
 ### 2. CreateOrder_NullProductId_ThrowsArgumentException
 - **Given:** OrderRequest có productId null
 - **When:** gọi CreateOrder
-- **Then:** throw IllegalArgumentException
+- **Then:** throw `ArgumentException`
 - **Code branch:** Validation kiểm tra productId null
 ...
 ```
@@ -131,3 +132,7 @@ Bước 2: Agent xuất:
 - `./rules/general/verify-relevant-arguments-only.md`: chỉ xác minh argument mock liên quan.
 - `./rules/general/existing-test-awareness.md`: kiểm tra test hiện có và tránh trùng lặp.
 - `./rules/general/code-context-analysis.md`: đọc dependency trước khi phân tích.
+
+### Rule C# xUnit
+
+- `./rules/csharp/xunit.md`: nullable contract, async, cancellation, HTTP status và quy ước xUnit/Moq của dự án.

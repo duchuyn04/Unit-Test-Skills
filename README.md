@@ -391,7 +391,10 @@ Nếu project đã lỗi từ trước, xử lý build blocker trước rồi m�
 ├── .claude/
 │   └── settings.json
 ├── .github/
+│   ├── workflows/validate-skills.yml
 │   └── CODEOWNERS
+├── scripts/
+│   └── validate-skills.mjs
 ├── skills/
 │   ├── generate-test-cases/
 │   │   ├── agents/openai.yaml
@@ -417,3 +420,5 @@ Nếu project đã lỗi từ trước, xử lý build blocker trước rồi m�
 `AGENTS.md` cung cấp hướng dẫn chung cho các coding agent có hỗ trợ file này. `CLAUDE.md` là entry point dành cho Claude Code. Metadata trong `agents/openai.yaml` giúp Codex hiển thị skill rõ hơn trong giao diện. File `templates/AGENTS-SNIPPET.md` là đoạn cấu hình có thể chép vào dự án C# sử dụng các skill.
 
 Khi sửa một rule chung, cần đồng bộ nội dung tương ứng ở cả `skills/generate-test-cases/rules/general/` và `skills/generate-tests/rules/tests/general/` để hai skill không áp dụng hai bộ tiêu chí khác nhau.
+
+GitHub Actions chạy `scripts/validate-skills.mjs` và kiểm tra discovery bằng `npx skills` trên mỗi push hoặc pull request. Script xác minh frontmatter, tên thư mục, metadata Codex, nội dung general rule giữa hai skill và một số lỗi tương thích đã biết.

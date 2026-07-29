@@ -13,11 +13,13 @@ tags: csharp, dotnet, tests, logging, ilogger, console
 
 - Với `ILogger<T>`, xác minh log level, message template và field liên quan.
 - Không phụ thuộc vào timestamp, event order hoặc format của logging provider nếu chúng không thuộc hành vi.
-- Với code mới, có thể dùng `FakeLogger<T>` từ `Microsoft.Extensions.Diagnostics.Testing`.
+- Có thể dùng `FakeLogger<T>` khi test project đã tham chiếu `Microsoft.Extensions.Diagnostics.Testing`. Không tự thêm package nếu dự án đã có cách kiểm tra logging khác.
 - Nếu redirect console, luôn khôi phục writer bằng `try/finally`.
 - Không assertion log chỉ để tăng coverage.
 
 ### Dùng `FakeLogger<T>`
+
+Phần này chỉ áp dụng khi test project đã có package `Microsoft.Extensions.Diagnostics.Testing`.
 
 ```csharp
 public sealed class OrderServiceTests

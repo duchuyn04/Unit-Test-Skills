@@ -22,7 +22,9 @@ tags: tests, test-cases, strategy, coverage, branches
 - Biến thể kích thước collection, trừ khi mã có logic phụ thuộc rõ ràng vào kích thước.
 - Trường hợp suy đoán như Unicode hiếm hoặc payload rất lớn, trừ khi mã xử lý rõ ràng các trường hợp đó.
 - Đối số null, trừ khi parameter là nullable (`T?`) hoặc mã có guard rõ ràng.
-- Nhiều test cho cùng một loại exception.
+- Test trùng cùng nhánh mã, cùng nguyên nhân và cùng kết quả quan sát được, kể cả khi chúng ném cùng exception type.
+
+Không gộp chỉ vì các nhánh ném cùng exception type. Hai validation branch cùng ném `ArgumentException` vẫn cần test riêng nếu chúng đại diện cho điều kiện hoặc contract khác nhau.
 
 **Không đúng:**
 

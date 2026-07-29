@@ -82,6 +82,8 @@ public async Task GetUser_ExistingId_ReturnsUserJson()
 
 ### Stub HTTP response
 
+Mẫu dưới đây dùng extension từ `Moq.Contrib.HttpClient`. Chỉ dùng khi test project đã tham chiếu package đó. Nếu chưa có, giữ pattern `HttpMessageHandler` giả hoặc HTTP test utility hiện có của dự án; không tự thêm package chỉ để dùng đúng mẫu này.
+
 ```csharp
 const string responseJson = """
     {

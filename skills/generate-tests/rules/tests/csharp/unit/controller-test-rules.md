@@ -12,11 +12,13 @@ Dùng xUnit với `WebApplicationFactory<Program>` khi cần kiểm tra routing,
 ### Chọn đúng phạm vi test
 
 - Dùng controller unit test cho logic trong action và mapping từ service result sang `IActionResult`.
-- Dùng `WebApplicationFactory<Program>` cho HTTP pipeline thực tế.
+- Dùng `WebApplicationFactory<Program>` cho HTTP pipeline thực tế khi test project đã tham chiếu `Microsoft.AspNetCore.Mvc.Testing`.
 - Không khởi động database hoặc external service thật; thay dependency trong DI container.
 - Không dùng host đầy đủ khi chỉ cần kiểm tra một method thuần.
 
 ### Setup HTTP test
+
+Chỉ dùng mẫu này khi test project đã có `Microsoft.AspNetCore.Mvc.Testing`. `RemoveAll<T>` còn cần namespace `Microsoft.Extensions.DependencyInjection.Extensions`. Nếu dự án chưa có các dependency này, ưu tiên controller unit test hoặc hạ tầng HTTP test đang tồn tại thay vì tự thêm package.
 
 ```csharp
 public sealed class UserControllerTests :

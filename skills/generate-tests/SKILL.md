@@ -1,7 +1,7 @@
 ---
 name: generate-tests
 description: "Dùng khi người dùng yêu cầu tạo hoặc viết unit test cho mã C#. Skill phân tích target, lập danh sách test case để rà soát, sinh test bằng xUnit/Moq, rồi build và chạy test."
-allowed-tools: Read, Write, Glob, Grep, Bash, AskUserQuestion
+allowed-tools: Read, Write, Glob, Grep, Bash
 ---
 
 # Skill tạo test
@@ -73,7 +73,7 @@ Ví dụ:
 
 ### Bước 3: Yêu cầu người dùng rà soát
 
-Sau khi xuất danh sách test case, dùng `AskUserQuestion`:
+Sau khi xuất danh sách test case, dùng cơ chế hỏi người dùng mà agent hiện tại hỗ trợ. Nếu không có tool tương tác chuyên dụng, đặt câu hỏi trong phản hồi và dừng để chờ câu trả lời:
 
 ```
 Câu hỏi: "Danh sách test case đã sẵn sàng. Tiếp tục sinh mã test?"

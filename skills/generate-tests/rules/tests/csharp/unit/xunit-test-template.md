@@ -68,7 +68,7 @@ public sealed class CalculatorServiceTests
         var exception = Assert.Throws<ArgumentOutOfRangeException>(
             () => _service.Calculate(-1));
 
-        Assert.Equal("Input must be positive. (Parameter 'input')", exception.Message);
+        Assert.Equal("input", exception.ParamName);
     }
 }
 ```
@@ -105,3 +105,4 @@ public sealed class {TestedClassName}Tests
 4. Theo Arrange-Act-Assert và đặt tên method theo PascalCase.
 5. Dùng assertion library hiện có; nếu chưa có, dùng assertion của xUnit.
 6. Chỉ dùng `[Theory]` khi mọi `InlineData` đi qua cùng một hành vi và nhánh mã.
+7. Không so sánh toàn bộ exception message trừ khi chuỗi đó là public contract ổn định. Ưu tiên exception type, `ParamName` và property có cấu trúc; nếu cần kiểm tra custom message, chỉ kiểm tra phần nội dung ổn định.

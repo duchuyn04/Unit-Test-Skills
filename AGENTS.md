@@ -37,6 +37,7 @@ Mỗi skill là một thư mục độc lập. Khi skill được gọi, đọc 
 Sau khi thay đổi cấu trúc hoặc frontmatter, chạy:
 
 ```bash
+node scripts/validate-skills.mjs
 npx skills@latest add . --list
 ```
 
