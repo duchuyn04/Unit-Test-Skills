@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate C# xUnit Tests"
+  short_description: "Phân tích, viết và chạy unit test C#"
+  default_prompt: "Dùng $generate-tests để phân tích target, lập test case, rồi viết và chạy unit test C# sau khi tôi xác nhận."

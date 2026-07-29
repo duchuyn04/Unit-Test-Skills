@@ -127,6 +127,27 @@ npx skills@latest add duchuyn04/Unit-Test-Skills -g -a codex --skill '*' -y
 
 Nên cài theo project nếu mỗi repository có quy ước test riêng. Dùng `-g` khi bạn muốn bộ quy tắc này là mặc định cho các dự án C# của mình.
 
+### Cài cho agent khác
+
+Thay giá trị của `-a` để cài trực tiếp cho agent đang sử dụng:
+
+```bash
+# Claude Code
+npx skills@latest add duchuyn04/Unit-Test-Skills -a claude-code --skill '*' -y
+
+# Cursor
+npx skills@latest add duchuyn04/Unit-Test-Skills -a cursor --skill '*' -y
+
+# GitHub Copilot
+npx skills@latest add duchuyn04/Unit-Test-Skills -a github-copilot --skill '*' -y
+```
+
+Nếu bỏ cờ `-a` và `-y`, CLI sẽ dò các agent có trên máy và cho phép bạn chọn nơi cài theo cách tương tác:
+
+```bash
+npx skills@latest add duchuyn04/Unit-Test-Skills
+```
+
 ### Bước 5: Kiểm tra sau khi cài
 
 ```bash
@@ -244,7 +265,7 @@ Các rule chung trong repository được xây dựng dựa trên những nguyê
 | [Don't Put Logic in Tests](https://testing.googleblog.com/2014/07/testing-on-toilet-dont-put-logic-in.html) | Expected value được viết trực tiếp; tránh loop, condition hoặc phép tính có thể lặp lại bug của production code. |
 | [Test Behaviors, Not Methods](https://testing.googleblog.com/2014/04/testing-on-toilet-test-behaviors-not.html) | Tách test theo hành vi thay vì mặc định một method tương ứng với đúng một test. |
 
-Các bài viết trên là nguồn cho nguyên tắc thiết kế test. Rule dành riêng cho .NET như xUnit attribute, Moq callback, `ILogger<T>`, `WebApplicationFactory`, JSON và lệnh `dotnet` được mô tả riêng trong thư mục `rules/tests/csharp/` và `rules/tests/post-generation/`.
+Các bài viết trên là nguồn cho nguyên tắc thiết kế test. Rule dành riêng cho .NET như xUnit attribute, Moq callback, `ILogger<T>`, `WebApplicationFactory`, JSON và lệnh `dotnet` được mô tả riêng trong thư mục `skills/generate-tests/rules/tests/csharp/` và `skills/generate-tests/rules/tests/post-generation/`.
 
 ## Ví dụ từng bước
 
@@ -367,17 +388,32 @@ Nếu project đã lỗi từ trước, xử lý build blocker trước rồi m�
 
 ```text
 .
-├── generate-test-cases/
-│   ├── SKILL.md
-│   └── rules/
-│       ├── csharp/
-│       └── general/
-└── generate-tests/
-    ├── SKILL.md
-    └── rules/tests/
-        ├── csharp/unit/
-        ├── general/
-        └── post-generation/
+├── .claude/
+│   └── settings.json
+├── .github/
+│   └── CODEOWNERS
+├── skills/
+│   ├── generate-test-cases/
+│   │   ├── agents/openai.yaml
+│   │   ├── SKILL.md
+│   │   └── rules/
+│   │       ├── csharp/
+│   │       └── general/
+│   └── generate-tests/
+│       ├── agents/openai.yaml
+│       ├── SKILL.md
+│       └── rules/tests/
+│           ├── csharp/unit/
+│           ├── general/
+│           └── post-generation/
+├── templates/
+│   └── AGENTS-SNIPPET.md
+├── .gitignore
+├── AGENTS.md
+├── CLAUDE.md
+└── README.md
 ```
 
-Khi sửa một rule chung, cần đồng bộ nội dung tương ứng ở cả `generate-test-cases/rules/general/` và `generate-tests/rules/tests/general/` để hai skill không áp dụng hai bộ tiêu chí khác nhau.
+`AGENTS.md` cung cấp hướng dẫn chung cho các coding agent có hỗ trợ file này. `CLAUDE.md` là entry point dành cho Claude Code. Metadata trong `agents/openai.yaml` giúp Codex hiển thị skill rõ hơn trong giao diện. File `templates/AGENTS-SNIPPET.md` là đoạn cấu hình có thể chép vào dự án C# sử dụng các skill.
+
+Khi sửa một rule chung, cần đồng bộ nội dung tương ứng ở cả `skills/generate-test-cases/rules/general/` và `skills/generate-tests/rules/tests/general/` để hai skill không áp dụng hai bộ tiêu chí khác nhau.

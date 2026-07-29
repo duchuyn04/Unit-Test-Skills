@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate C# Test Cases"
+  short_description: "Phân tích coverage và lập test case C#"
+  default_prompt: "Dùng $generate-test-cases để phân tích các test case còn thiếu cho file C# được chỉ định mà chưa sinh mã test."

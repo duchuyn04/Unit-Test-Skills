@@ -1,0 +1,28 @@
+# .NET build output
+bin/
+obj/
+TestResults/
+artifacts/
+
+# Coverage output
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+
+# IDE and editor files
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Node tooling cache
+node_modules/
+*.log

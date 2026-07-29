@@ -2,7 +2,6 @@
 name: generate-tests
 description: "Dùng khi người dùng yêu cầu tạo hoặc viết unit test cho mã C#. Skill phân tích target, lập danh sách test case để rà soát, sinh test bằng xUnit/Moq, rồi build và chạy test."
 allowed-tools: Read, Write, Glob, Grep, Bash, AskUserQuestion
-context: fork
 ---
 
 # Skill tạo test
