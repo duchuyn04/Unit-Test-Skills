@@ -28,4 +28,6 @@ Dự án sử dụng hai Agent Skills:
 - Giữ assertion library, mocking library và convention hiện có của test project.
 - Ghi căn cứ cho expected outcome; không mặc định implementation hiện tại là đúng.
 - Giữ regression test fail khi production code vi phạm contract có bằng chứng và báo expected/actual rõ ràng.
+- Khi yêu cầu chỉ là sinh test, production code là chỉ đọc. Chỉ ghi file test trong test project đã công bố; project file, package và config cần xác nhận riêng.
+- Nếu test cần refactor production để tạo seam, trả về `TESTABILITY_BLOCKER` với file ảnh hưởng và chờ quyền sửa production riêng. Không coi xác nhận sinh test là quyền refactor.
 ```

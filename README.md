@@ -222,11 +222,11 @@ src/MyApp/Services/OrderService.cs.
 
 Quy trình gồm năm bước:
 
-1. Agent đọc target, dependency, test project, `.csproj`, global using và các test lân cận.
+1. Agent đọc target, dependency, test project, `.csproj`, global using và các test lân cận; sau đó công bố thư mục test được phép ghi.
 2. Agent lập danh sách test case cho từng hành vi và nhánh mã cần thiết.
 3. Agent dừng lại để bạn rà soát danh sách test case.
-4. Sau khi được xác nhận, agent tạo mới hoặc cập nhật test class bằng framework và thư viện hiện có của dự án.
-5. Agent chạy `dotnet build`, sau đó chạy đúng nhóm test vừa tạo bằng `dotnet test --filter`.
+4. Sau khi được xác nhận, agent chụp trạng thái Git ban đầu rồi chỉ tạo mới hoặc cập nhật test class trong test project đã xác định.
+5. Agent chạy `dotnet build`, chạy đúng nhóm test vừa tạo bằng `dotnet test --filter`, rồi kiểm tra không có file ngoài phạm vi bị thay đổi.
 
 Ở bước rà soát, bạn có thể chỉnh danh sách trước khi cho phép sinh mã. Ví dụ:
 
@@ -234,6 +234,42 @@ Quy trình gồm năm bước:
 Bỏ test case kiểm tra null vì contract không cho phép null.
 Thêm trường hợp CancellationToken đã bị hủy, sau đó tiếp tục sinh test.
 ```
+
+## Bảo vệ production code
+
+Khi bạn gọi `generate-tests`, câu lệnh đó chỉ cho phép agent thay đổi mã kiểm thử. Production code được xem là **chỉ đọc**, kể cả khi một test khó viết, không compile hoặc đang fail.
+
+Quy trình bảo vệ gồm bốn lớp:
+
+1. Agent nhận diện test project bằng cấu trúc solution, `IsTestProject`, `Microsoft.NET.Test.Sdk`, xUnit hoặc test project hiện có.
+2. Trước khi ghi file, agent chụp baseline của working tree và công bố **allowed write set**, ví dụ `tests/MyApp.Tests/**`.
+3. Sau khi sinh và chạy test, script đối chiếu trạng thái mới với baseline. Thay đổi production mới phát sinh hoặc Git `HEAD` bị đổi do agent tự commit sẽ trả về `WRITE_BOUNDARY_VIOLATION` cùng chi tiết chính xác.
+4. Agent không tự động revert file vi phạm vì working tree có thể chứa thay đổi của bạn; nó dừng và báo lại để bạn quyết định.
+
+Trong test project, agent mặc định chỉ được sửa file test, fixture, builder và test data. Các file sau vẫn cần bạn cho phép riêng:
+
+- test project file như `.csproj`;
+- solution, `Directory.Packages.props`, `NuGet.Config`, `.props`, `.targets`;
+- thao tác thêm, xóa hoặc nâng version package;
+- cấu hình làm thay đổi cách build, restore hoặc chạy test.
+
+Agent không được tự ý sửa mã trong `src/**`, production project file, migration, `appsettings*`, validation, authorization, public contract, CI/CD hoặc deployment config để ép test pass.
+
+### Khi test quá khó vì production code thiếu test seam
+
+Ví dụ class gọi trực tiếp `DateTime.UtcNow`, `Guid.NewGuid()`, filesystem, network, static/global state hoặc tự `new` dependency nên không thể kiểm soát đầu vào. Agent phải dừng phần bị chặn và báo:
+
+```text
+TESTABILITY_BLOCKER
+- Target: OrderService.CreateOrder
+- Test bị chặn: CreateOrder_ExpiredPromotion_DoesNotApplyDiscount
+- Lý do: method đọc trực tiếp DateTime.UtcNow nên test không kiểm soát được thời điểm
+- Refactor tối thiểu đề xuất: inject TimeProvider
+- File production có thể bị ảnh hưởng: src/MyApp/Services/OrderService.cs
+- Cần xác nhận riêng: Có cho phép sửa production code theo đề xuất trên không?
+```
+
+Xác nhận “tiếp tục sinh test” không đồng nghĩa với cho phép refactor production. Bạn phải đồng ý riêng với đề xuất đó; nếu chưa đồng ý, agent tiếp tục các test khác có thể viết và giữ production code nguyên trạng.
 
 ## Phạm vi hỗ trợ
 
@@ -259,7 +295,7 @@ Skill ưu tiên assertion library và mocking library đang có trong test proje
 - Không đoán constructor, property hoặc contract của DTO; agent phải đọc type thực tế.
 - Tránh logic phức tạp trong phần arrange và assertion.
 - Chỉ verify những argument có ý nghĩa với hành vi đang kiểm thử.
-- Không sửa production code chỉ để làm test pass.
+- Không sửa production code khi yêu cầu chỉ là sinh test; test khó phải được báo bằng `TESTABILITY_BLOCKER` thay vì tự refactor.
 - Không tạo test class trùng nếu dự án đã có test class tương ứng.
 
 ## Nguồn tham khảo từ Google Testing Blog
@@ -328,6 +364,8 @@ dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --filter "FullyQualifiedName~Or
 ```
 
 Kết quả cuối cùng cần nêu rõ file nào đã thay đổi, lệnh nào đã chạy, test nào pass, test nào fail và failure đó là test defect, production defect hay contract chưa rõ.
+
+Agent cũng phải chạy write-boundary check. Nếu có file ngoài test project bị thay đổi kể từ baseline, kết quả phải nêu `WRITE_BOUNDARY_VIOLATION` và đường dẫn vi phạm; agent không được âm thầm sửa tiếp hoặc tự revert thay đổi chưa rõ chủ sở hữu.
 
 ## Cập nhật skill
 
@@ -416,11 +454,13 @@ Nếu project đã lỗi từ trước, xử lý build blocker trước rồi m�
 │   │       └── general/
 │   └── generate-tests/
 │       ├── agents/openai.yaml
+│       ├── scripts/production-write-boundary.mjs
 │       ├── SKILL.md
 │       └── rules/tests/
 │           ├── csharp/unit/
 │           ├── general/
-│           └── post-generation/
+│           ├── post-generation/
+│           └── safety/
 ├── templates/
 │   └── AGENTS-SNIPPET.md
 ├── .gitignore

@@ -162,6 +162,42 @@ if (!executionRule.includes("regression test đang fail")) {
   errors.push("Quy tắc hậu kiểm chưa cho phép giữ regression test fail có căn cứ");
 }
 
+const generateTestsSkill = read("skills/generate-tests/SKILL.md");
+const safetyRulePath =
+  "skills/generate-tests/rules/tests/safety/production-code-write-boundary.md";
+const boundaryScriptPath =
+  "skills/generate-tests/scripts/production-write-boundary.mjs";
+
+if (!fs.existsSync(path.join(repositoryRoot, safetyRulePath))) {
+  errors.push("generate-tests thiếu production-code-write-boundary.md");
+} else {
+  const safetyRule = read(safetyRulePath);
+  for (const requiredText of [
+    "Production code luôn ở chế độ chỉ đọc",
+    "TESTABILITY_BLOCKER",
+    "WRITE_BOUNDARY_VIOLATION",
+    "Không tự động revert",
+  ]) {
+    if (!safetyRule.includes(requiredText)) {
+      errors.push(`Safety rule thiếu invariant: ${requiredText}`);
+    }
+  }
+}
+
+if (!fs.existsSync(path.join(repositoryRoot, boundaryScriptPath))) {
+  errors.push("generate-tests thiếu production-write-boundary.mjs");
+}
+for (const requiredReference of [
+  "safety/production-code-write-boundary.md",
+  "scripts/production-write-boundary.mjs",
+  "TESTABILITY_BLOCKER",
+  "WRITE_BOUNDARY_VIOLATION",
+]) {
+  if (!generateTestsSkill.includes(requiredReference)) {
+    errors.push(`generate-tests chưa tích hợp: ${requiredReference}`);
+  }
+}
+
 if (errors.length > 0) {
   console.error("Skill validation failed:");
   for (const error of errors) console.error(`- ${error}`);

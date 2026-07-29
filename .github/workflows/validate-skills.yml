@@ -22,5 +22,10 @@ jobs:
       - name: Validate repository invariants
         run: node scripts/validate-skills.mjs
 
+      - name: Verify production write boundary
+        run: |
+          node --check skills/generate-tests/scripts/production-write-boundary.mjs
+          node scripts/test-production-write-boundary.mjs
+
       - name: Verify skills CLI discovery
         run: npx --yes skills@latest add . --list

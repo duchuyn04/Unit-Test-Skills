@@ -32,6 +32,8 @@ Mỗi skill là một thư mục độc lập. Khi skill được gọi, đọc 
 - Khi thêm hoặc đổi tên rule, cập nhật danh sách tham chiếu trong `SKILL.md` tương ứng.
 - Không thêm test case suy đoán, không tạo test trùng và không sửa production code chỉ để làm test pass.
 - Lấy requirement, public contract và invariant làm căn cứ expected outcome. Không lấy tỷ lệ pass làm mục tiêu; giữ regression test fail khi production code vi phạm contract có bằng chứng.
+- Khi yêu cầu chỉ là sinh test, production code là chỉ đọc. Trước khi ghi phải công bố test project được phép thay đổi, chụp baseline và kiểm tra write boundary sau cùng.
+- Thay đổi test project file, package hoặc build config cần người dùng cho phép riêng. Nếu test cần refactor production, dừng bằng `TESTABILITY_BLOCKER`; xác nhận sinh test không phải quyền sửa production.
 
 ## Kiểm tra repository
 

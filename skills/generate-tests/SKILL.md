@@ -18,6 +18,7 @@ Phân tích mã nguồn và tạo unit test C# chất lượng cao cho đối t�
 - Không đoán constructor, property hoặc contract của test data; phải đọc type thực tế.
 - Giữ framework và library hiện có của test project. Nếu dự án chưa có lựa chọn, dùng xUnit và Moq.
 - Không tối ưu để mọi test pass. Lấy contract và invariant làm chuẩn; implementation chỉ là một nguồn để tìm branch và hành vi hiện tại.
+- Khi yêu cầu chỉ là sinh test, coi toàn bộ production code là chỉ đọc. Việc test khó hoặc fail không cấp quyền sửa production code.
 
 ---
 
@@ -25,7 +26,7 @@ Phân tích mã nguồn và tạo unit test C# chất lượng cao cho đối t�
 
 ### Bước 1: Đọc rule và phân tích ngữ cảnh
 
-1. Đọc rule liên quan trong `./rules/tests/`.
+1. Đọc rule liên quan trong `./rules/tests/`, luôn gồm `safety/production-code-write-boundary.md`.
 2. Đọc file, class hoặc method cần kiểm thử.
 3. Đọc acceptance criteria, API contract, validation, authorization policy, XML documentation, invariant và tài liệu dự án nếu có để xác định expected outcome độc lập với implementation.
 4. Theo namespace và reference để đọc DTO, entity, enum, custom exception cùng các type liên quan, theo `code-context-analysis.md`.
@@ -33,6 +34,7 @@ Phân tích mã nguồn và tạo unit test C# chất lượng cao cho đối t�
    - Nếu có, đọc toàn bộ và bổ sung test còn thiếu vào file đó.
    - Nếu chưa có, đọc 2 đến 3 test class lân cận để học quy ước dự án.
 6. Đọc `.csproj`, `Directory.Packages.props` và global using liên quan để xác định xUnit, Moq, FluentAssertions, Shouldly hoặc library hiện có.
+7. Xác định chính xác test project và thư mục test được phép ghi. Nêu allowed write set trong danh sách test case để người dùng biết phạm vi trước khi xác nhận.
 
 ### Bước 2: Lập test case
 
@@ -88,19 +90,21 @@ Lựa chọn:
   - "Chưa, tôi muốn rà soát": dừng để người dùng chỉnh test case.
 ```
 
-Nếu người dùng đồng ý, chuyển sang Bước 4. Nếu không, dừng và chờ hướng dẫn.
+Nếu người dùng đồng ý, chuyển sang Bước 4. Sự đồng ý sinh test chỉ áp dụng cho file mã kiểm thử trong allowed write set; không bao gồm production code, project file hoặc package/config. Nếu không, dừng và chờ hướng dẫn.
 
 ### Bước 4: Sinh mã test
 
-1. Xác định loại mã và áp dụng rule phù hợp:
+1. Ngay trước lần ghi đầu tiên, resolve script từ thư mục chứa `SKILL.md`, rồi chạy chế độ `snapshot` của `scripts/production-write-boundary.mjs`; không giả định skill nằm trong repository đang được test. Truyền test project qua `--test-root` và lưu state ngoài repository.
+2. Xác định loại mã và áp dụng rule phù hợp:
    - **ASP.NET Core controller/endpoint**: dùng `controller-test-rules.md`.
    - **Service/domain logic**: dùng `domain-service-rules.md`.
    - **Repository, messaging hoặc loại khác**: dùng `domain-service-rules.md` làm baseline và nói rõ chưa có rule chuyên biệt.
    - **Mọi mã C#**: luôn áp dụng `xunit-test-template.md`, `argument-matching.md`, `json-serialization.md` và `logging-rules.md` khi có liên quan.
-2. Nếu đã có test class, thêm method vào class đó; không tạo file trùng.
-3. Sinh test theo đúng test case ở Bước 2.
-4. Dùng assertion và mocking library hiện có. Không thêm library thứ hai nếu chưa cần.
-5. Tạo hoặc cập nhật test file.
+3. Nếu đã có test class, thêm method vào class đó; không tạo file trùng.
+4. Sinh test theo đúng test case ở Bước 2.
+5. Dùng assertion và mocking library hiện có. Không thêm library thứ hai nếu chưa cần.
+6. Chỉ tạo hoặc cập nhật file test trong allowed write set. Muốn đổi test project file, package hoặc config phải xin phép riêng và truyền đúng file được duyệt qua `--allow-config` khi tạo snapshot.
+7. Nếu cần sửa production để tạo seam hoặc làm test pass, không sửa file. Dừng phần bị chặn và trả về `TESTABILITY_BLOCKER` theo safety rule.
 
 ### Bước 5: Build và chạy test
 
@@ -108,6 +112,7 @@ Nếu người dùng đồng ý, chuyển sang Bước 4. Nếu không, dừng v
 2. Chạy test class vừa tạo bằng `dotnet test --filter`. Xem `test-execution-verification.md`.
 3. Sửa test thất bại khi setup, mock hoặc expected outcome sai. Nếu production code vi phạm contract có căn cứ, giữ regression test fail và báo bug; không đổi expected chỉ để test pass.
 4. Nếu gặp blocker hoặc nghi vấn production bug, báo command, expected, actual, căn cứ kỳ vọng và nguyên nhân còn lại. Không âm thầm xóa test.
+5. Chạy chế độ `check` của script đã resolve ở Bước 4 với state tương ứng. Nếu có `WRITE_BOUNDARY_VIOLATION`, dừng, báo đúng đường dẫn và không tự động revert thay đổi chưa rõ chủ sở hữu.
 
 ---
 
@@ -135,6 +140,13 @@ Sau 5 lần sửa:
 2. Kiểm tra lại contract, nguồn kỳ vọng, setup và test data.
 3. Nếu production code vi phạm contract, giữ test tái hiện ở trạng thái fail và báo rõ thay vì làm test pass bằng expected value sai.
 4. Nếu chưa có nguồn kỳ vọng độc lập, đánh dấu Characterization và hỏi người dùng; không tự kết luận bug.
+
+### Test cần thay đổi production code để có thể kiểm thử
+
+1. Không đổi visibility, constructor, interface, static dependency, clock, I/O wrapper hoặc dependency injection chỉ vì test đang khó viết.
+2. Dừng test case bị chặn và trả về `TESTABILITY_BLOCKER`, gồm target, test bị chặn, lý do, refactor tối thiểu đề xuất và danh sách production file có thể bị ảnh hưởng.
+3. Hỏi quyền sửa production bằng một xác nhận riêng. Xác nhận "sinh test" trước đó không được dùng làm quyền sửa production.
+4. Trong khi chưa được phép, tiếp tục các test case độc lập khác nếu có thể và giữ production code nguyên trạng.
 
 ---
 
@@ -205,3 +217,8 @@ Phải đọc và áp dụng các rule liên quan trong `./rules/tests/`.
 
 - `post-generation/compilation-verification.md`: xác minh compilation.
 - `post-generation/test-execution-verification.md`: phân loại test defect, production defect và regression test fail.
+
+### An toàn thay đổi
+
+- `safety/production-code-write-boundary.md`: giới hạn file agent được ghi, cơ chế `TESTABILITY_BLOCKER` và cách xử lý vi phạm.
+- `scripts/production-write-boundary.mjs`: chụp baseline và phát hiện thay đổi ngoài test project hoặc config chưa được duyệt.

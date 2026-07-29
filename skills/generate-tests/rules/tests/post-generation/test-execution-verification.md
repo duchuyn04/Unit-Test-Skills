@@ -88,6 +88,8 @@ Không dùng `async void`.
 - Mọi test phải compile; compilation failure không được xem là production bug.
 - Có thể bàn giao regression test đang fail khi failure tái hiện được và expected outcome có nguồn độc lập rõ ràng.
 - Không sửa production code để ép test pass nếu người dùng chỉ yêu cầu tạo test.
+- Chạy write-boundary check trước khi bàn giao. Nếu production, project file hoặc config chưa được duyệt đã thay đổi, dừng với `WRITE_BOUNDARY_VIOLATION`; không tự động revert file chưa rõ chủ sở hữu.
+- Nếu test chỉ có thể viết sau khi refactor production, trả về `TESTABILITY_BLOCKER` và chờ quyền sửa production riêng.
 - Không dùng hành vi hiện tại làm expected nếu nó mâu thuẫn với contract.
 - Không xóa test thất bại để tạo cảm giác mọi thứ đã pass.
 - Với mỗi regression test fail, báo test name, command, expected, actual và căn cứ kỳ vọng.
