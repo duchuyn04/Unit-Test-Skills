@@ -9,6 +9,62 @@ Repository có hai skill:
 | `generate-test-cases` | Phân tích mã nguồn và liệt kê test case cần có, không tạo mã test. |
 | `generate-tests` | Phân tích mã nguồn, lập test case để bạn rà soát, viết mã test, sau đó build và chạy test. |
 
+## Hai skill thực hiện những gì?
+
+### `generate-test-cases`: phân tích trước khi viết test
+
+Skill này phù hợp khi bạn muốn biết một class hoặc method còn thiếu test gì nhưng chưa muốn thay đổi mã nguồn. Agent không chỉ đọc file được chỉ định. Nó lần theo namespace, constructor và method call để đọc thêm interface, DTO, entity, enum, custom exception cùng các type có liên quan.
+
+Nếu test class đã tồn tại, agent đọc toàn bộ test hiện có trước khi đề xuất trường hợp mới. Mục tiêu là tìm phần coverage còn thiếu, không lặp lại những hành vi đã được kiểm tra.
+
+Danh sách test case có thể bao gồm:
+
+- Luồng thành công và giá trị trả về.
+- Mỗi nhánh điều kiện tạo ra một kết quả quan sát được khác nhau.
+- Validation được cài đặt thật trong production code.
+- Exception, not found, conflict hoặc failure result.
+- HTTP `400`, `401`, `403`, `404` và các status code khác nếu controller có nhánh tương ứng.
+- Authorization policy hoặc attribute bảo mật.
+- Nhánh trong private/protected method, nhưng được kiểm tra thông qua public API gọi tới nhánh đó.
+- Async, nullable contract và `CancellationToken` khi target có xử lý rõ ràng.
+- Side effect như lưu entity, gọi dependency hoặc phát sinh dữ liệu đầu ra.
+
+Skill không tự thêm các trường hợp mang tính suy đoán. Ví dụ, nó không đề xuất test `null` nếu contract không cho phép `null`, không tạo nhiều test chỉ để thay đổi kích thước collection khi hành vi giống nhau, và không test trực tiếp private method.
+
+Đầu ra của mỗi test case có tên test dự kiến, Given, When, Then và nhánh mã được bao phủ. Skill không tạo hoặc sửa file `.cs`.
+
+### `generate-tests`: viết test và kiểm chứng kết quả
+
+Skill này thực hiện toàn bộ quy trình từ phân tích đến chạy test. Trước khi sinh mã, agent vẫn lập danh sách test case như `generate-test-cases` và dừng lại để bạn rà soát. Chỉ sau khi được xác nhận, agent mới tạo hoặc cập nhật test file.
+
+Khi viết mã, skill xử lý từng nhóm target như sau:
+
+| Nhóm target | Cách kiểm thử |
+| --- | --- |
+| Service và domain logic | Khởi tạo class trực tiếp, mock dependency bằng Moq, kiểm tra state, return value, exception và side effect. Không khởi động ASP.NET Core nếu không cần. |
+| ASP.NET Core controller | Unit test trực tiếp action khi chỉ cần kiểm tra logic và ánh xạ sang `IActionResult`. Dùng `WebApplicationFactory<Program>` khi cần kiểm tra routing, model binding, validation, authentication hoặc serialization thực tế. |
+| Repository, messaging hoặc loại khác | Dùng rule service/domain làm nền, đọc contract thực tế và nói rõ khi chưa có rule chuyên biệt. |
+| Test class đã tồn tại | Bổ sung method còn thiếu vào đúng class, giữ naming, fixture, assertion library và mocking library đang dùng. |
+| Test class chưa tồn tại | Đọc hai đến ba test class lân cận để học namespace, cấu trúc thư mục và quy ước của dự án trước khi tạo file mới. |
+
+Trong phần arrange và verify, agent còn kiểm tra:
+
+- Constructor, property và kiểu dữ liệu thật của test data; không đoán contract.
+- Argument quan trọng được truyền vào dependency. Với DTO hoặc model, agent ưu tiên capture object rồi assertion field liên quan thay vì dùng `It.IsAny<T>()` cho mọi thứ.
+- Số lần gọi dependency khi đó là một phần của hành vi.
+- JSON bằng dữ liệu kỳ vọng rõ ràng, tránh tạo expected value bằng cùng logic với production code.
+- Structured logging qua `ILogger<T>` khi log là contract cần xác minh.
+- `Console.Out` hoặc `Console.Error` chỉ khi console output là hành vi công khai của ứng dụng.
+- Async result, exception và cancellation theo đúng contract của method.
+
+Sau khi sinh mã, agent chạy:
+
+1. `dotnet build` cho test project và sửa lỗi biên dịch liên quan đến test vừa tạo.
+2. `dotnet test --filter` để chỉ chạy test class mục tiêu.
+3. Phân tích failure và sửa test nếu setup, mock hoặc expected value chưa đúng.
+
+Agent không sửa production code chỉ để làm test pass. Nếu test làm lộ ra hành vi có dấu hiệu là bug, kết quả cần ghi rõ failure và nguyên nhân thay vì đổi expected value cho khớp với bug.
+
 ## Yêu cầu
 
 Máy cần có:
@@ -172,6 +228,23 @@ Skill ưu tiên assertion library và mocking library đang có trong test proje
 - Chỉ verify những argument có ý nghĩa với hành vi đang kiểm thử.
 - Không sửa production code chỉ để làm test pass.
 - Không tạo test class trùng nếu dự án đã có test class tương ứng.
+
+## Nguồn tham khảo từ Google Testing Blog
+
+Các rule chung trong repository được xây dựng dựa trên những nguyên tắc unit test đã được Google trình bày trong series *Testing on the Toilet*. Ví dụ trong bài viết dùng ngôn ngữ khác, nhưng nguyên tắc đã được áp dụng lại cho C#, xUnit và Moq.
+
+| Nguồn | Cách áp dụng trong skill |
+| --- | --- |
+| [Only Verify Relevant Method Arguments](https://testing.googleblog.com/2018/06/testing-on-toilet-only-verify-relevant.html) | Chỉ verify argument quyết định hành vi đang test; argument không liên quan có thể dùng matcher rộng hơn. |
+| [Keep Tests Focused](https://testing.googleblog.com/2018/06/testing-on-toilet-keep-tests-focused.html) | Mỗi test chỉ kiểm tra một scenario hoặc một kết quả quan sát được. |
+| [Cleanly Create Test Data](https://testing.googleblog.com/2018/02/testing-on-toilet-cleanly-create-test.html) | Dùng helper hoặc builder để giảm dữ liệu thừa, nhưng field quan trọng với test phải được khai báo rõ. |
+| [Keep Cause and Effect Clear](https://testing.googleblog.com/2017/01/testing-on-toilet-keep-cause-and-effect.html) | Setup tạo ra kết quả cần kiểm tra được đặt gần action và assertion tương ứng. |
+| [Prefer Testing Public APIs Over Implementation-Detail Classes](https://testing.googleblog.com/2015/01/testing-on-toilet-prefer-testing-public.html) | Bao phủ private/protected branch thông qua public API thay vì gọi trực tiếp implementation detail. |
+| [Writing Descriptive Test Names](https://testing.googleblog.com/2014/10/testing-on-toilet-writing-descriptive.html) | Tên test chứa method hoặc hành vi, trạng thái đầu vào và kết quả mong đợi. |
+| [Don't Put Logic in Tests](https://testing.googleblog.com/2014/07/testing-on-toilet-dont-put-logic-in.html) | Expected value được viết trực tiếp; tránh loop, condition hoặc phép tính có thể lặp lại bug của production code. |
+| [Test Behaviors, Not Methods](https://testing.googleblog.com/2014/04/testing-on-toilet-test-behaviors-not.html) | Tách test theo hành vi thay vì mặc định một method tương ứng với đúng một test. |
+
+Các bài viết trên là nguồn cho nguyên tắc thiết kế test. Rule dành riêng cho .NET như xUnit attribute, Moq callback, `ILogger<T>`, `WebApplicationFactory`, JSON và lệnh `dotnet` được mô tả riêng trong thư mục `rules/tests/csharp/` và `rules/tests/post-generation/`.
 
 ## Ví dụ từng bước
 
