@@ -31,7 +31,7 @@ Danh sách test case có thể bao gồm:
 
 Skill không tự thêm các trường hợp mang tính suy đoán. Ví dụ, nó không đề xuất test `null` nếu contract không cho phép `null`, không tạo nhiều test chỉ để thay đổi kích thước collection khi hành vi giống nhau, và không test trực tiếp private method.
 
-Đầu ra của mỗi test case có tên test dự kiến, Given, When, Then và nhánh mã được bao phủ. Skill không tạo hoặc sửa file `.cs`.
+Đầu ra của mỗi test case có tên test dự kiến, Given, When, Then, nhánh mã, căn cứ kỳ vọng, rủi ro và loại test. Skill không tạo hoặc sửa file `.cs`.
 
 ### `generate-tests`: viết test và kiểm chứng kết quả
 
@@ -63,7 +63,19 @@ Sau khi sinh mã, agent chạy:
 2. `dotnet test --filter` để chỉ chạy test class mục tiêu.
 3. Phân tích failure và sửa test nếu setup, mock hoặc expected value chưa đúng.
 
-Agent không sửa production code chỉ để làm test pass. Nếu test làm lộ ra hành vi có dấu hiệu là bug, kết quả cần ghi rõ failure và nguyên nhân thay vì đổi expected value cho khớp với bug.
+Agent không sửa production code hoặc đổi expected value chỉ để làm test pass. Nếu test chứng minh production code vi phạm contract, regression test được giữ ở trạng thái fail cùng expected, actual và căn cứ kết luận.
+
+## Contract-first thay vì ưu tiên test pass
+
+Tỷ lệ test pass không phải thước đo chất lượng của bộ test. Test được sinh theo ba loại:
+
+| Loại | Ý nghĩa |
+| --- | --- |
+| Contract | Expected outcome đến từ requirement, API contract, validation, authorization policy hoặc domain invariant. |
+| Regression | Tái hiện một bug đã biết hoặc một sai lệch giữa production code và contract có bằng chứng. |
+| Characterization | Ghi nhận hành vi hiện tại khi chưa có nguồn độc lập để kết luận hành vi đó đúng hay sai. |
+
+Skill dùng implementation để tìm branch, nhưng không mặc định xem implementation là nguồn sự thật. Khi regression test fail vì code vi phạm contract, agent giữ test đó và báo bug. Khi contract chưa rõ, agent hỏi người dùng thay vì cố làm test pass hoặc tự kết luận production code có lỗi.
 
 ## Yêu cầu
 
@@ -315,7 +327,7 @@ dotnet build tests/MyApp.Tests/MyApp.Tests.csproj
 dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --filter "FullyQualifiedName~OrderServiceTests"
 ```
 
-Kết quả cuối cùng cần nêu rõ file nào đã thay đổi, lệnh nào đã chạy và test có pass hay không.
+Kết quả cuối cùng cần nêu rõ file nào đã thay đổi, lệnh nào đã chạy, test nào pass, test nào fail và failure đó là test defect, production defect hay contract chưa rõ.
 
 ## Cập nhật skill
 

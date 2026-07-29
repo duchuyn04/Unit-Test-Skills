@@ -142,6 +142,25 @@ if (allSkillContent.includes("AskUserQuestion")) {
 if (!read("skills/generate-test-cases/SKILL.md").includes("./rules/csharp/xunit.md")) {
   errors.push("generate-test-cases chưa tham chiếu rule C# xUnit");
 }
+for (const skillName of ["generate-test-cases", "generate-tests"]) {
+  const skillContent = read(`skills/${skillName}/SKILL.md`);
+  if (!skillContent.includes("contract-first-bug-discovery.md")) {
+    errors.push(`${skillName} chưa tham chiếu contract-first-bug-discovery.md`);
+  }
+  if (!skillContent.includes("Căn cứ kỳ vọng")) {
+    errors.push(`${skillName} chưa yêu cầu ghi căn cứ kỳ vọng`);
+  }
+}
+
+const executionRule = read(
+  "skills/generate-tests/rules/tests/post-generation/test-execution-verification.md",
+);
+if (executionRule.includes("Không bàn giao test đang fail")) {
+  errors.push("Quy tắc hậu kiểm vẫn cấm mọi regression test fail");
+}
+if (!executionRule.includes("regression test đang fail")) {
+  errors.push("Quy tắc hậu kiểm chưa cho phép giữ regression test fail có căn cứ");
+}
 
 if (errors.length > 0) {
   console.error("Skill validation failed:");

@@ -31,6 +31,7 @@ Mỗi skill là một thư mục độc lập. Khi skill được gọi, đọc 
 - General rule tồn tại ở hai nơi. Khi sửa, đồng bộ cả `skills/generate-test-cases/rules/general/` và `skills/generate-tests/rules/tests/general/`.
 - Khi thêm hoặc đổi tên rule, cập nhật danh sách tham chiếu trong `SKILL.md` tương ứng.
 - Không thêm test case suy đoán, không tạo test trùng và không sửa production code chỉ để làm test pass.
+- Lấy requirement, public contract và invariant làm căn cứ expected outcome. Không lấy tỷ lệ pass làm mục tiêu; giữ regression test fail khi production code vi phạm contract có bằng chứng.
 
 ## Kiểm tra repository
 

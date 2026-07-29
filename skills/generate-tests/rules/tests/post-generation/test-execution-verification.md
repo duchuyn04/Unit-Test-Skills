@@ -1,13 +1,13 @@
 ---
 title: Xác minh chạy test sau khi sinh
 impact: HIGH
-impactDescription: bảo đảm test đã sinh thực sự pass, không chỉ compile
+impactDescription: phân loại chính xác test pass, test lỗi và regression test phát hiện production bug
 tags: csharp, dotnet, xunit, tests, execution, verification
 ---
 
 ## Xác minh chạy test sau khi sinh
 
-Sau khi build thành công, chạy test vừa tạo và xác nhận tất cả đều pass. Test compile được nhưng thất bại chưa thể bàn giao.
+Sau khi build thành công, chạy test vừa tạo. Mục tiêu không phải làm mọi test pass bằng mọi giá mà là xác định test đúng, production code đúng contract hay có sai lệch cần báo.
 
 ### Chạy đúng phạm vi
 
@@ -23,28 +23,25 @@ Chạy một test method khi cần chẩn đoán nhanh:
 dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --no-build --filter "FullyQualifiedName~OrderServiceTests.CreateOrder_ValidRequest_SavesOrder"
 ```
 
-Sau khi test mục tiêu pass, cân nhắc chạy toàn test project nếu thay đổi helper hoặc fixture dùng chung.
+Sau khi xử lý kết quả test mục tiêu, cân nhắc chạy toàn test project nếu thay đổi helper hoặc fixture dùng chung.
 
 ### Khi test thất bại
 
 1. Đọc đầy đủ failure output và stack trace.
-2. Xác định root cause:
-   - Expected value sai.
-   - Setup mock không khớp argument.
-   - Thiếu `Returns`, `ReturnsAsync` hoặc `ThrowsAsync`.
-   - Hiểu sai hành vi production code.
-   - State bị chia sẻ giữa các test.
-   - Async method chưa được `await`.
-3. Sửa test, không sửa production code chỉ để làm test pass.
-4. Chạy lại test mục tiêu.
-5. Lặp tối đa 3 lần cho mỗi test thất bại. Nếu vẫn không sửa được, báo rõ blocker và failure còn lại; không âm thầm xóa test.
+2. Phân loại root cause:
+   - **Test defect:** expected không có căn cứ, setup mock sai, thiếu `Returns`/`Throws`, state bị chia sẻ hoặc async method chưa được `await`.
+   - **Production defect:** actual behavior vi phạm requirement, public contract, validation, authorization policy hoặc invariant đã ghi trong test case.
+   - **Contract chưa rõ:** chỉ biết implementation hiện tại nhưng không có nguồn độc lập để kết luận đúng sai.
+3. Với test defect, sửa test rồi chạy lại tối đa 3 lần.
+4. Với production defect, giữ regression test ở trạng thái fail; không đổi expected value và không xóa test.
+5. Với contract chưa rõ, đánh dấu Characterization và hỏi người dùng trước khi chốt expected outcome.
 
 ### Lỗi thường gặp
 
-**Expected value sai:**
+**Expected value có căn cứ:**
 
 ```csharp
-// Production code trả về "John"
+// API contract quy định tên trả về là "John"
 Assert.Equal("John", actualUser.Name);
 ```
 
@@ -88,8 +85,10 @@ Không dùng `async void`.
 
 ### Nguyên tắc bàn giao
 
-- Không bàn giao test đang fail.
+- Mọi test phải compile; compilation failure không được xem là production bug.
+- Có thể bàn giao regression test đang fail khi failure tái hiện được và expected outcome có nguồn độc lập rõ ràng.
 - Không sửa production code để ép test pass nếu người dùng chỉ yêu cầu tạo test.
-- Nếu production code có dấu hiệu lỗi, test phải phản ánh contract hoặc hành vi hiện tại và ghi chú nghi vấn rõ ràng.
+- Không dùng hành vi hiện tại làm expected nếu nó mâu thuẫn với contract.
 - Không xóa test thất bại để tạo cảm giác mọi thứ đã pass.
-- Báo command đã chạy và kết quả cuối cùng.
+- Với mỗi regression test fail, báo test name, command, expected, actual và căn cứ kỳ vọng.
+- Không gọi một Characterization failure là bug khi contract chưa rõ.

@@ -26,4 +26,6 @@ Dự án sử dụng hai Agent Skills:
 - Kiểm thử private/protected branch thông qua public API.
 - Không tạo test trùng, không thêm trường hợp suy đoán và không sửa production code chỉ để làm test pass.
 - Giữ assertion library, mocking library và convention hiện có của test project.
+- Ghi căn cứ cho expected outcome; không mặc định implementation hiện tại là đúng.
+- Giữ regression test fail khi production code vi phạm contract có bằng chứng và báo expected/actual rõ ràng.
 ```

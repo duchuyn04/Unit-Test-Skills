@@ -17,6 +17,7 @@ Phân tích mã nguồn và tạo unit test C# chất lượng cao cho đối t�
 - Không bỏ qua bước nào trong workflow.
 - Không đoán constructor, property hoặc contract của test data; phải đọc type thực tế.
 - Giữ framework và library hiện có của test project. Nếu dự án chưa có lựa chọn, dùng xUnit và Moq.
+- Không tối ưu để mọi test pass. Lấy contract và invariant làm chuẩn; implementation chỉ là một nguồn để tìm branch và hành vi hiện tại.
 
 ---
 
@@ -26,11 +27,12 @@ Phân tích mã nguồn và tạo unit test C# chất lượng cao cho đối t�
 
 1. Đọc rule liên quan trong `./rules/tests/`.
 2. Đọc file, class hoặc method cần kiểm thử.
-3. Theo namespace và reference để đọc DTO, entity, enum, custom exception cùng các type liên quan, theo `code-context-analysis.md`.
-4. Tìm `{ClassName}Test` hoặc `{ClassName}Tests` trong test project, theo `existing-test-awareness.md`.
+3. Đọc acceptance criteria, API contract, validation, authorization policy, XML documentation, invariant và tài liệu dự án nếu có để xác định expected outcome độc lập với implementation.
+4. Theo namespace và reference để đọc DTO, entity, enum, custom exception cùng các type liên quan, theo `code-context-analysis.md`.
+5. Tìm `{ClassName}Test` hoặc `{ClassName}Tests` trong test project, theo `existing-test-awareness.md`.
    - Nếu có, đọc toàn bộ và bổ sung test còn thiếu vào file đó.
    - Nếu chưa có, đọc 2 đến 3 test class lân cận để học quy ước dự án.
-5. Đọc `.csproj`, `Directory.Packages.props` và global using liên quan để xác định xUnit, Moq, FluentAssertions, Shouldly hoặc library hiện có.
+6. Đọc `.csproj`, `Directory.Packages.props` và global using liên quan để xác định xUnit, Moq, FluentAssertions, Shouldly hoặc library hiện có.
 
 ### Bước 2: Lập test case
 
@@ -43,7 +45,7 @@ Phân tích mọi nhánh mã:
 - Authorization policy hoặc attribute bảo mật.
 - Async, cancellation và nullable contract khi mã có xử lý rõ ràng.
 
-Áp dụng nghiêm ngặt INCLUDE/EXCLUDE rule. Chưa sinh mã test ở bước này.
+Áp dụng nghiêm ngặt INCLUDE/EXCLUDE rule và `contract-first-bug-discovery.md`. Chưa sinh mã test ở bước này.
 
 #### Định dạng test case
 
@@ -55,6 +57,9 @@ Phân tích mọi nhánh mã:
 - **When:** {hành động được kiểm thử}
 - **Then:** {kết quả kỳ vọng}
 - **Code branch:** {nhánh mã được bao phủ}
+- **Căn cứ kỳ vọng:** {requirement/API contract/invariant hoặc hành vi hiện tại}
+- **Rủi ro:** {lỗi mà test có thể phát hiện}
+- **Loại:** {Contract/Regression/Characterization}
 
 ### 2. {TestMethodName}
 ...
@@ -101,8 +106,8 @@ Nếu người dùng đồng ý, chuyển sang Bước 4. Nếu không, dừng v
 
 1. Chạy `dotnet build` cho test project và sửa compilation error, tối đa 5 lần. Xem `compilation-verification.md`.
 2. Chạy test class vừa tạo bằng `dotnet test --filter`. Xem `test-execution-verification.md`.
-3. Sửa test thất bại; không sửa production code chỉ để làm test pass.
-4. Nếu gặp blocker sau các lần thử hợp lý, báo command, failure và nguyên nhân còn lại cho người dùng. Không âm thầm xóa test.
+3. Sửa test thất bại khi setup, mock hoặc expected outcome sai. Nếu production code vi phạm contract có căn cứ, giữ regression test fail và báo bug; không đổi expected chỉ để test pass.
+4. Nếu gặp blocker hoặc nghi vấn production bug, báo command, expected, actual, căn cứ kỳ vọng và nguyên nhân còn lại. Không âm thầm xóa test.
 
 ---
 
@@ -127,8 +132,9 @@ Sau 5 lần sửa:
 ### Test thất bại do hành vi production code
 
 1. Không sửa production code nếu người dùng chỉ yêu cầu tạo test.
-2. Kiểm tra lại contract và expected value.
-3. Nếu hành vi có dấu hiệu là bug, báo rõ thay vì làm test pass bằng expected value sai.
+2. Kiểm tra lại contract, nguồn kỳ vọng, setup và test data.
+3. Nếu production code vi phạm contract, giữ test tái hiện ở trạng thái fail và báo rõ thay vì làm test pass bằng expected value sai.
+4. Nếu chưa có nguồn kỳ vọng độc lập, đánh dấu Characterization và hỏi người dùng; không tự kết luận bug.
 
 ---
 
@@ -157,7 +163,7 @@ Bước 5: Agent chạy:
         dotnet build tests/MyApp.Tests/MyApp.Tests.csproj
         dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --filter "FullyQualifiedName~OrderServiceTests"
 
-Kết quả: test file compile và mọi test mục tiêu đều pass.
+Kết quả: test file compile; các test đúng contract pass, hoặc regression test fail được giữ lại cùng báo cáo bug có căn cứ.
 ```
 
 ---
@@ -184,6 +190,7 @@ Phải đọc và áp dụng các rule liên quan trong `./rules/tests/`.
 - `general/prefer-public-apis.md`: kiểm thử qua public API.
 - `general/existing-test-awareness.md`: tránh test trùng lặp.
 - `general/code-context-analysis.md`: đọc dependency trước khi viết test.
+- `general/contract-first-bug-discovery.md`: xác định nguồn expected độc lập, tìm lỗi có chủ đích và xử lý regression test fail.
 
 ### Unit test C# xUnit
 
@@ -197,4 +204,4 @@ Phải đọc và áp dụng các rule liên quan trong `./rules/tests/`.
 ### Hậu kiểm
 
 - `post-generation/compilation-verification.md`: xác minh compilation.
-- `post-generation/test-execution-verification.md`: xác minh test pass.
+- `post-generation/test-execution-verification.md`: phân loại test defect, production defect và regression test fail.

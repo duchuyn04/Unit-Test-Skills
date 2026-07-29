@@ -15,6 +15,7 @@ Phân tích mã nguồn và lập danh sách test case cần viết cho method h
 - Phân tích kỹ mã nguồn trước khi liệt kê test case.
 - Ưu tiên chất lượng hơn tốc độ; đọc kỹ các file mã nguồn và rule liên quan.
 - Không bỏ qua class dependency. Hiểu đủ ngữ cảnh sẽ cho ra test case tốt hơn.
+- Không dùng tỷ lệ test pass làm thước đo chất lượng. Xác định expected outcome từ contract và invariant trước khi đối chiếu implementation.
 
 ---
 
@@ -25,8 +26,9 @@ Phân tích mã nguồn và lập danh sách test case cần viết cho method h
 1. **Đọc quy tắc chung** trong thư mục `./rules/general/` (xem phần Tham chiếu quy tắc bên dưới).
 2. **Đọc quy tắc C#** trong `./rules/csharp/xunit.md` khi target là file `.cs` hoặc dự án có `.csproj` hay `.sln`.
 3. **Đọc đối tượng cần phân tích**: file nguồn, class hoặc method đã chỉ định.
-4. **Đọc dependency**: theo các import để đọc DTO, entity, enum và kiểu dữ liệu mà đối tượng sử dụng, theo quy tắc `code-context-analysis`.
-5. **Kiểm tra test hiện có**: tìm test class đã bao phủ đối tượng này theo rule `existing-test-awareness`. Nếu có, đọc toàn bộ và chỉ tập trung vào hành vi chưa được bao phủ.
+4. **Đọc nguồn kỳ vọng độc lập**: acceptance criteria, API contract, validation, authorization policy, XML documentation, invariant và tài liệu dự án nếu có.
+5. **Đọc dependency**: theo các import để đọc DTO, entity, enum và kiểu dữ liệu mà đối tượng sử dụng, theo quy tắc `code-context-analysis`.
+6. **Kiểm tra test hiện có**: tìm test class đã bao phủ đối tượng này theo rule `existing-test-awareness`. Nếu có, đọc toàn bộ và chỉ tập trung vào hành vi chưa được bao phủ.
 
 ### Bước 2: Tạo test case
 
@@ -37,8 +39,9 @@ Phân tích mã nguồn và lập danh sách test case cần viết cho method h
    - Method private/protected được đối tượng gọi
    - Annotation bảo mật, nếu có
 2. Áp dụng nghiêm ngặt các quy tắc INCLUDE/EXCLUDE.
-3. Xuất danh sách test case theo đúng định dạng.
-4. Không sinh mã kiểm thử, chỉ mô tả test case.
+3. Áp dụng `contract-first-bug-discovery.md` để tách contract test khỏi characterization test và tìm các sai lệch có căn cứ.
+4. Xuất danh sách test case theo đúng định dạng.
+5. Không sinh mã kiểm thử, chỉ mô tả test case.
 
 ---
 
@@ -54,6 +57,9 @@ Với mỗi test case, cung cấp:
 - **When:** {hành động được kiểm thử}
 - **Then:** {kết quả kỳ vọng}
 - **Code branch:** {nhánh mã được bao phủ}
+- **Căn cứ kỳ vọng:** {requirement/API contract/invariant hoặc hành vi hiện tại}
+- **Rủi ro:** {lỗi mà test có thể phát hiện}
+- **Loại:** {Contract/Regression/Characterization}
 
 ### 2. {testMethodName}
 ...
@@ -100,12 +106,18 @@ Bước 2: Agent xuất:
 - **When:** gọi `CreateOrder`
 - **Then:** Order được lưu vào repository và trả về cùng ID đã sinh
 - **Code branch:** Luồng thành công
+- **Căn cứ kỳ vọng:** Contract của `IOrderService.CreateOrder`
+- **Rủi ro:** Mapping sai product hoặc không lưu order
+- **Loại:** Contract
 
 ### 2. CreateOrder_NullProductId_ThrowsArgumentException
 - **Given:** OrderRequest có productId null
 - **When:** gọi CreateOrder
 - **Then:** throw `ArgumentException`
 - **Code branch:** Validation kiểm tra productId null
+- **Căn cứ kỳ vọng:** Guard clause của public API và nullable contract
+- **Rủi ro:** Input không hợp lệ vẫn được lưu
+- **Loại:** Contract
 ...
 ```
 
@@ -132,6 +144,7 @@ Bước 2: Agent xuất:
 - `./rules/general/verify-relevant-arguments-only.md`: chỉ xác minh argument mock liên quan.
 - `./rules/general/existing-test-awareness.md`: kiểm tra test hiện có và tránh trùng lặp.
 - `./rules/general/code-context-analysis.md`: đọc dependency trước khi phân tích.
+- `./rules/general/contract-first-bug-discovery.md`: chọn nguồn expected độc lập, phân loại test và giữ regression test có căn cứ.
 
 ### Rule C# xUnit
 
