@@ -1,4 +1,4 @@
-# Unit Test Skills cho C# và xUnit
+# Unit Tests Skills cho C# và xUnit
 
 Bộ skill này giúp AI coding agent phân tích và viết unit test cho dự án C#/.NET. Các quy tắc đi kèm tập trung vào xUnit, Moq, ASP.NET Core và quy trình kiểm tra lại bằng `dotnet build` cùng `dotnet test`.
 
