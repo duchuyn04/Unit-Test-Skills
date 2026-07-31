@@ -7,7 +7,7 @@ import path from "node:path";
 import process from "node:process";
 import { execFileSync } from "node:child_process";
 
-const VERSION = 1;
+const VERSION = 2;
 const SENSITIVE_NAMES = new Set(["directory.packages.props", "nuget.config"]);
 const SENSITIVE_EXTENSIONS = new Set([
   ".csproj",
@@ -17,6 +17,42 @@ const SENSITIVE_EXTENSIONS = new Set([
   ".slnx",
   ".props",
   ".targets",
+]);
+const IGNORED_WATCH_EXTENSIONS = new Set([
+  ".cs",
+  ".cshtml",
+  ".env",
+  ".fs",
+  ".json",
+  ".props",
+  ".razor",
+  ".targets",
+  ".vb",
+  ".xml",
+  ".yaml",
+  ".yml",
+]);
+const IGNORED_WATCH_NAMES = new Set([
+  ".env",
+  "dockerfile",
+  "global.json",
+  "nuget.config",
+]);
+const GENERATED_DIRECTORY_NAMES = new Set([
+  ".git",
+  ".idea",
+  ".next",
+  ".terraform",
+  ".vs",
+  ".vscode",
+  "artifacts",
+  "bin",
+  "coverage",
+  "dist",
+  "node_modules",
+  "obj",
+  "packages",
+  "testresults",
 ]);
 
 function fail(message, exitCode = 2) {
@@ -48,6 +84,7 @@ function runGit(repositoryRoot, args) {
   return execFileSync("git", args, {
     cwd: repositoryRoot,
     encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
@@ -84,7 +121,34 @@ function collectWorkingPaths(repositoryRoot) {
   for (const args of commands) {
     for (const filePath of splitNullTerminated(runGit(repositoryRoot, args))) paths.add(filePath);
   }
+  for (const filePath of collectIgnoredPolicyPaths(repositoryRoot)) paths.add(filePath);
   return [...paths].sort();
+}
+
+function isGeneratedPath(filePath) {
+  return filePath
+    .toLowerCase()
+    .split("/")
+    .some((segment) => GENERATED_DIRECTORY_NAMES.has(segment));
+}
+
+function isIgnoredWatchCandidate(filePath) {
+  if (isGeneratedPath(filePath)) return false;
+  const baseName = path.posix.basename(filePath).toLowerCase();
+  return baseName.startsWith("appsettings.") ||
+    IGNORED_WATCH_NAMES.has(baseName) ||
+    IGNORED_WATCH_EXTENSIONS.has(path.posix.extname(baseName));
+}
+
+function collectIgnoredPolicyPaths(repositoryRoot) {
+  const output = runGit(repositoryRoot, [
+    "ls-files",
+    "--others",
+    "--ignored",
+    "--exclude-standard",
+    "-z",
+  ]);
+  return splitNullTerminated(output).filter(isIgnoredWatchCandidate);
 }
 
 function currentHead(repositoryRoot) {

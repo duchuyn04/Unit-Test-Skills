@@ -13,6 +13,7 @@ Trước khi tạo test, hãy kiểm tra nội dung đã có. Tuân theo quy ư�
 
 1. **Tìm test class hiện có** cho đối tượng cần phân tích:
    - Tìm `{ClassName}Test` hoặc `{ClassName}Tests` trong thư mục test.
+   - Tìm thêm reference tới constructor, fully-qualified type hoặc public method của target vì test có thể được tổ chức theo feature thay vì theo tên class.
    - Nếu tìm thấy, đọc toàn bộ trước khi tạo nội dung mới.
 
 2. **Nếu tìm thấy test class hiện có:**

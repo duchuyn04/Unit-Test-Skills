@@ -1,0 +1,20 @@
+{
+  "id": "discount-boundary",
+  "skill": "generate-test-cases",
+  "target": "src/PricingService.cs",
+  "minimumCaseCount": 2,
+  "maximumCaseCount": 2,
+  "required": [
+    {
+      "name": "CalculatePrice_BelowThreshold_ReturnsSubtotal",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:4"]
+    },
+    {
+      "name": "CalculatePrice_AtThreshold_AppliesTenPercentDiscount",
+      "type": "Regression",
+      "evidenceIncludes": ["CONTRACT.md:5"]
+    }
+  ],
+  "forbiddenNamePatterns": ["AboveThreshold", "NegativeSubtotal", "Null", "Unicode", "LargePayload"]
+}

@@ -50,9 +50,11 @@ Ghi một trong ba loại:
 
 Với mỗi test case, ghi:
 
-- **Căn cứ kỳ vọng:** file, requirement, attribute, policy, invariant hoặc phát biểu của người dùng.
+- **Căn cứ kỳ vọng:** nguồn có thể kiểm tra lại. Với nguồn trong repository, ghi đường dẫn tương đối kèm dòng, heading hoặc symbol, ví dụ `docs/orders.md:42` hoặc `IOrderService.CreateOrder`. Với phát biểu của người dùng, ghi rõ `Người dùng xác nhận: ...`.
 - **Rủi ro:** lỗi mà test có khả năng phát hiện.
 - **Loại:** Contract, Regression hoặc Characterization.
+
+Không gắn nhãn **Contract** hoặc **Regression** nếu căn cứ chỉ là suy luận từ implementation. Nếu invariant được suy ra nhưng chưa có tài liệu hoặc xác nhận độc lập, nêu phép suy luận và tạm gắn nhãn **Characterization**. Căn cứ không tồn tại, không trỏ được tới nội dung đã đọc hoặc không hỗ trợ expected outcome là test defect.
 
 ### Khi test fail
 
@@ -64,4 +66,3 @@ Với mỗi test case, ghi:
 6. Không sửa production code nếu người dùng chỉ yêu cầu viết test.
 
 Một test fail không tự động chứng minh có bug. Chỉ kết luận production bug khi có nguồn kỳ vọng độc lập và failure tái hiện được.
-

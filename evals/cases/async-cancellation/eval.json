@@ -1,0 +1,45 @@
+{
+  "id": "async-cancellation",
+  "skill": "generate-test-cases",
+  "target": "src/JobProcessor.cs",
+  "minimumCaseCount": 7,
+  "maximumCaseCount": 7,
+  "required": [
+    {
+      "name": "ProcessAsync_ProvidedCancellationToken_ForwardsTokenToRepository",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:4"]
+    },
+    {
+      "name": "ProcessAsync_RepositoryObservesCancellation_ThrowsOperationCanceledException",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:4"]
+    },
+    {
+      "name": "ProcessAsync_RepositoryObservesCancellation_DoesNotPublish",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:5"]
+    },
+    {
+      "name": "ProcessAsync_CancellationRequestedAfterRepositoryReturns_ThrowsOperationCanceledException",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:4"]
+    },
+    {
+      "name": "ProcessAsync_CancellationRequestedAfterRepositoryReturns_DoesNotPublish",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:5"]
+    },
+    {
+      "name": "ProcessAsync_RepositoryThrows_PropagatesSameException",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:6"]
+    },
+    {
+      "name": "ProcessAsync_RepositoryThrows_DoesNotPublish",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:6"]
+    }
+  ],
+  "forbiddenNamePatterns": ["ValidJob_PublishesOnce", "Null"]
+}

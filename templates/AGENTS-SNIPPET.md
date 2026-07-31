@@ -14,7 +14,7 @@ Dự án sử dụng hai Agent Skills:
   </skill>
   <skill>
     <name>generate-tests</name>
-    <description>Dùng khi cần viết unit test C#. Skill đọc target và dependency, lập test case để rà soát, sinh test bằng framework hiện có hoặc xUnit/Moq, rồi build và chạy test mục tiêu.</description>
+    <description>Dùng khi cần viết unit test C#. Skill đọc target và dependency, lập test case để rà soát, sinh test bằng framework hiện có hoặc xUnit/Moq, rồi build, chạy test mục tiêu và toàn test project so với baseline.</description>
   </skill>
 </available_skills>
 
@@ -27,7 +27,9 @@ Dự án sử dụng hai Agent Skills:
 - Không tạo test trùng, không thêm trường hợp suy đoán và không sửa production code chỉ để làm test pass.
 - Giữ assertion library, mocking library và convention hiện có của test project.
 - Ghi căn cứ cho expected outcome; không mặc định implementation hiện tại là đúng.
+- Với Contract/Regression, ghi căn cứ có thể truy vết tới đường dẫn:dòng, symbol/heading hoặc xác nhận của người dùng.
 - Giữ regression test fail khi production code vi phạm contract có bằng chứng và báo expected/actual rõ ràng.
+- Chạy full test project trước và sau thay đổi để phát hiện regression mới; nếu không thể, báo `FULL_SUITE_NOT_VERIFIED`.
 - Khi yêu cầu chỉ là sinh test, production code là chỉ đọc. Chỉ ghi file test trong test project đã công bố; project file, package và config cần xác nhận riêng.
 - Nếu test cần refactor production để tạo seam, trả về `TESTABILITY_BLOCKER` với file ảnh hưởng và chờ quyền sửa production riêng. Không coi xác nhận sinh test là quyền refactor.
 ```

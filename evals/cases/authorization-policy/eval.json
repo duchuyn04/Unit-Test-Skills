@@ -1,0 +1,25 @@
+{
+  "id": "authorization-policy",
+  "skill": "generate-test-cases",
+  "target": "src/AdminUsersController.cs",
+  "minimumCaseCount": 3,
+  "maximumCaseCount": 3,
+  "required": [
+    {
+      "name": "Delete_Unauthenticated_Returns401",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:3"]
+    },
+    {
+      "namePattern": "^Delete_(NonAdmin|AuthenticatedWithoutAdminRole)_Returns403$",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:4"]
+    },
+    {
+      "name": "Delete_AdminAndMissingUser_Returns404",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:6"]
+    }
+  ],
+  "forbiddenNamePatterns": ["AdminAndExistingUser", "Returns4xx"]
+}

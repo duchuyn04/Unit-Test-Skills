@@ -1,0 +1,15 @@
+{
+  "id": "existing-feature-tests",
+  "skill": "generate-test-cases",
+  "target": "src/NameNormalizer.cs",
+  "minimumCaseCount": 1,
+  "maximumCaseCount": 1,
+  "required": [
+    {
+      "namePattern": "^Normalize_Whitespace(Only)?Name_ReturnsNull$",
+      "type": "Contract",
+      "evidenceIncludes": ["CONTRACT.md:4"]
+    }
+  ],
+  "forbiddenNamePatterns": ["ValidPaddedName", "NullInput", "Unicode", "LargePayload"]
+}

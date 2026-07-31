@@ -1,0 +1,9 @@
+{
+  "id": "no-speculative-cases",
+  "skill": "generate-test-cases",
+  "target": "src/HashService.cs",
+  "minimumCaseCount": 0,
+  "maximumCaseCount": 0,
+  "requiredTextPatterns": ["Mọi hành vi.*đã có coverage|coverage.*(hoàn tất|đầy đủ)|đã bao phủ mọi hành vi"],
+  "forbiddenNamePatterns": ["Null", "Unicode", "Large", "Empty"]
+}

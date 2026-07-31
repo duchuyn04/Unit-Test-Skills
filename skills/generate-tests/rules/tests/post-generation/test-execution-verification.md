@@ -23,7 +23,13 @@ Chạy một test method khi cần chẩn đoán nhanh:
 dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --no-build --filter "FullyQualifiedName~OrderServiceTests.CreateOrder_ValidRequest_SavesOrder"
 ```
 
-Sau khi xử lý kết quả test mục tiêu, cân nhắc chạy toàn test project nếu thay đổi helper hoặc fixture dùng chung.
+Sau khi xử lý kết quả test mục tiêu, luôn chạy toàn test project và so sánh với baseline đã ghi trước khi sinh test:
+
+```powershell
+dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --no-build
+```
+
+Nếu baseline đã có failure, liệt kê failure cũ và xác nhận không xuất hiện failure mới ngoài regression test có căn cứ vừa tạo. Nếu không thể chạy full project vì giới hạn môi trường hoặc thời gian, phải được người dùng chấp nhận rõ ràng và ghi trạng thái `FULL_SUITE_NOT_VERIFIED`; không mô tả kết quả là đã production-ready.
 
 ### Khi test thất bại
 
@@ -94,3 +100,4 @@ Không dùng `async void`.
 - Không xóa test thất bại để tạo cảm giác mọi thứ đã pass.
 - Với mỗi regression test fail, báo test name, command, expected, actual và căn cứ kỳ vọng.
 - Không gọi một Characterization failure là bug khi contract chưa rõ.
+- Báo kết quả full project so với baseline: tổng pass/fail/skip trước và sau, failure mới, failure đã hết và lý do của mọi chênh lệch.

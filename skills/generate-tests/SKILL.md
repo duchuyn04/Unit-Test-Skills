@@ -30,7 +30,7 @@ Phân tích mã nguồn và tạo unit test C# chất lượng cao cho đối t�
 2. Đọc file, class hoặc method cần kiểm thử.
 3. Đọc acceptance criteria, API contract, validation, authorization policy, XML documentation, invariant và tài liệu dự án nếu có để xác định expected outcome độc lập với implementation.
 4. Theo namespace và reference để đọc DTO, entity, enum, custom exception cùng các type liên quan, theo `code-context-analysis.md`.
-5. Tìm `{ClassName}Test` hoặc `{ClassName}Tests` trong test project, theo `existing-test-awareness.md`.
+5. Tìm `{ClassName}Test`, `{ClassName}Tests` và các test reference tới constructor, fully-qualified type hoặc public method của target, theo `existing-test-awareness.md`.
    - Nếu có, đọc toàn bộ và bổ sung test còn thiếu vào file đó.
    - Nếu chưa có, đọc 2 đến 3 test class lân cận để học quy ước dự án.
 6. Đọc `.csproj`, `Directory.Packages.props` và global using liên quan để xác định xUnit, Moq, FluentAssertions, Shouldly hoặc library hiện có.
@@ -38,7 +38,7 @@ Phân tích mã nguồn và tạo unit test C# chất lượng cao cho đối t�
 
 ### Bước 2: Lập test case
 
-Phân tích mọi nhánh mã:
+Dùng các nhánh mã để tìm hành vi quan sát được:
 
 - Luồng thành công.
 - Luồng lỗi và exception.
@@ -59,7 +59,7 @@ Phân tích mọi nhánh mã:
 - **When:** {hành động được kiểm thử}
 - **Then:** {kết quả kỳ vọng}
 - **Code branch:** {nhánh mã được bao phủ}
-- **Căn cứ kỳ vọng:** {requirement/API contract/invariant hoặc hành vi hiện tại}
+- **Căn cứ kỳ vọng:** {đường dẫn:dòng, symbol/heading, phát biểu người dùng hoặc hành vi hiện tại đối với Characterization}
 - **Rủi ro:** {lỗi mà test có thể phát hiện}
 - **Loại:** {Contract/Regression/Characterization}
 
@@ -94,25 +94,28 @@ Nếu người dùng đồng ý, chuyển sang Bước 4. Sự đồng ý sinh t
 
 ### Bước 4: Sinh mã test
 
-1. Ngay trước lần ghi đầu tiên, resolve script từ thư mục chứa `SKILL.md`, rồi chạy chế độ `snapshot` của `scripts/production-write-boundary.mjs`; không giả định skill nằm trong repository đang được test. Truyền test project qua `--test-root` và lưu state ngoài repository.
-2. Xác định loại mã và áp dụng rule phù hợp:
+1. Trước khi ghi, chạy toàn bộ test project để lấy baseline. Ghi command, số test pass/fail/skip và danh sách failure có sẵn. Nếu baseline không chạy được, dừng và báo blocker; chỉ tiếp tục không có baseline khi người dùng chấp nhận rõ ràng rằng không thể phát hiện regression mới.
+2. Ngay trước lần ghi đầu tiên, resolve script từ thư mục chứa `SKILL.md`, rồi chạy chế độ `snapshot` của `scripts/production-write-boundary.mjs`; không giả định skill nằm trong repository đang được test. Truyền test project qua `--test-root` và lưu state ngoài repository.
+3. Xác định loại mã và áp dụng rule phù hợp:
    - **ASP.NET Core controller/endpoint**: dùng `controller-test-rules.md`.
    - **Service/domain logic**: dùng `domain-service-rules.md`.
    - **Repository, messaging hoặc loại khác**: dùng `domain-service-rules.md` làm baseline và nói rõ chưa có rule chuyên biệt.
    - **Mọi mã C#**: luôn áp dụng `xunit-test-template.md`, `argument-matching.md`, `json-serialization.md` và `logging-rules.md` khi có liên quan.
-3. Nếu đã có test class, thêm method vào class đó; không tạo file trùng.
-4. Sinh test theo đúng test case ở Bước 2.
-5. Dùng assertion và mocking library hiện có. Không thêm library thứ hai nếu chưa cần.
-6. Chỉ tạo hoặc cập nhật file test trong allowed write set. Muốn đổi test project file, package hoặc config phải xin phép riêng và truyền đúng file được duyệt qua `--allow-config` khi tạo snapshot.
-7. Nếu cần sửa production để tạo seam hoặc làm test pass, không sửa file. Dừng phần bị chặn và trả về `TESTABILITY_BLOCKER` theo safety rule.
+4. Nếu đã có test class, thêm method vào class đó; không tạo file trùng.
+5. Sinh test theo đúng test case ở Bước 2.
+6. Dùng assertion và mocking library hiện có. Không thêm library thứ hai nếu chưa cần.
+7. Chỉ tạo hoặc cập nhật file test trong allowed write set. Muốn đổi test project file, package hoặc config phải xin phép riêng và truyền đúng file được duyệt qua `--allow-config` khi tạo snapshot.
+8. Nếu cần sửa production để tạo seam hoặc làm test pass, không sửa file. Dừng phần bị chặn và trả về `TESTABILITY_BLOCKER` theo safety rule.
 
 ### Bước 5: Build và chạy test
 
 1. Chạy `dotnet build` cho test project và sửa compilation error, tối đa 5 lần. Xem `compilation-verification.md`.
-2. Chạy test class vừa tạo bằng `dotnet test --filter`. Xem `test-execution-verification.md`.
+2. Chạy test class vừa tạo bằng `dotnet test --filter` để chẩn đoán nhanh. Xem `test-execution-verification.md`.
 3. Sửa test thất bại khi setup, mock hoặc expected outcome sai. Nếu production code vi phạm contract có căn cứ, giữ regression test fail và báo bug; không đổi expected chỉ để test pass.
-4. Nếu gặp blocker hoặc nghi vấn production bug, báo command, expected, actual, căn cứ kỳ vọng và nguyên nhân còn lại. Không âm thầm xóa test.
-5. Chạy chế độ `check` của script đã resolve ở Bước 4 với state tương ứng. Nếu có `WRITE_BOUNDARY_VIOLATION`, dừng, báo đúng đường dẫn và không tự động revert thay đổi chưa rõ chủ sở hữu.
+4. Chạy lại toàn bộ test project và so sánh với baseline. Không bàn giao như đã xác minh đầy đủ nếu bỏ qua bước này. Chỉ chấp nhận failure mới khi đó là regression test có căn cứ đã báo rõ; không chấp nhận failure mới không giải thích được ở test khác.
+5. Nếu gặp blocker hoặc nghi vấn production bug, báo command, expected, actual, căn cứ kỳ vọng và nguyên nhân còn lại. Không âm thầm xóa test.
+6. Áp dụng `test-effectiveness-verification.md`: dùng coverage/mutation tooling sẵn có hoặc báo `EFFECTIVENESS_NOT_MEASURED`; không tự thêm package.
+7. Chạy chế độ `check` của script đã resolve ở Bước 4 với state tương ứng. Nếu có `WRITE_BOUNDARY_VIOLATION`, dừng, báo đúng đường dẫn và không tự động revert thay đổi chưa rõ chủ sở hữu.
 
 ---
 
@@ -172,10 +175,12 @@ Bước 3: Agent yêu cầu người dùng rà soát.
 Bước 4: Agent tạo hoặc cập nhật OrderServiceTests.cs bằng xUnit và Moq.
 
 Bước 5: Agent chạy:
+        dotnet test tests/MyApp.Tests/MyApp.Tests.csproj
         dotnet build tests/MyApp.Tests/MyApp.Tests.csproj
         dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --filter "FullyQualifiedName~OrderServiceTests"
+        dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --no-build
 
-Kết quả: test file compile; các test đúng contract pass, hoặc regression test fail được giữ lại cùng báo cáo bug có căn cứ.
+Kết quả: test file compile; full project không có regression mới ngoài regression test có căn cứ; effectiveness được đo bằng tooling sẵn có hoặc báo `EFFECTIVENESS_NOT_MEASURED`.
 ```
 
 ---
@@ -217,6 +222,7 @@ Phải đọc và áp dụng các rule liên quan trong `./rules/tests/`.
 
 - `post-generation/compilation-verification.md`: xác minh compilation.
 - `post-generation/test-execution-verification.md`: phân loại test defect, production defect và regression test fail.
+- `post-generation/test-effectiveness-verification.md`: xác minh coverage/mutation khi repository có tooling và báo rõ khi chưa đo effectiveness.
 
 ### An toàn thay đổi
 

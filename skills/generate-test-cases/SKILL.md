@@ -28,11 +28,11 @@ Phân tích mã nguồn và lập danh sách test case cần viết cho method h
 3. **Đọc đối tượng cần phân tích**: file nguồn, class hoặc method đã chỉ định.
 4. **Đọc nguồn kỳ vọng độc lập**: acceptance criteria, API contract, validation, authorization policy, XML documentation, invariant và tài liệu dự án nếu có.
 5. **Đọc dependency**: theo các import để đọc DTO, entity, enum và kiểu dữ liệu mà đối tượng sử dụng, theo quy tắc `code-context-analysis`.
-6. **Kiểm tra test hiện có**: tìm test class đã bao phủ đối tượng này theo rule `existing-test-awareness`. Nếu có, đọc toàn bộ và chỉ tập trung vào hành vi chưa được bao phủ.
+6. **Kiểm tra test hiện có**: tìm theo tên class và reference tới constructor, fully-qualified type hoặc public method theo rule `existing-test-awareness`. Nếu có, đọc toàn bộ và chỉ tập trung vào hành vi chưa được bao phủ.
 
 ### Bước 2: Tạo test case
 
-1. Phân tích mọi nhánh mã, gồm:
+1. Dùng các nhánh mã để tìm hành vi quan sát được, gồm:
    - Luồng thành công
    - Luồng lỗi/exception
    - Logic validation
@@ -57,7 +57,7 @@ Với mỗi test case, cung cấp:
 - **When:** {hành động được kiểm thử}
 - **Then:** {kết quả kỳ vọng}
 - **Code branch:** {nhánh mã được bao phủ}
-- **Căn cứ kỳ vọng:** {requirement/API contract/invariant hoặc hành vi hiện tại}
+- **Căn cứ kỳ vọng:** {đường dẫn:dòng, symbol/heading, phát biểu người dùng hoặc hành vi hiện tại đối với Characterization}
 - **Rủi ro:** {lỗi mà test có thể phát hiện}
 - **Loại:** {Contract/Regression/Characterization}
 

@@ -57,6 +57,8 @@ try {
   run("git", ["config", "user.email", "write-boundary@example.invalid"]);
   run("git", ["config", "user.name", "Write Boundary Test"]);
   write("src/Service.cs", "public sealed class Service {}\n");
+  write("src/appsettings.Local.json", "{\"ApiKey\":\"before\"}\n");
+  write(".gitignore", "src/appsettings.Local.json\n**/obj/\n");
   write("tests/App.Tests/ServiceTests.cs", "public sealed class ServiceTests {}\n");
   write(
     "tests/App.Tests/App.Tests.csproj",
@@ -118,6 +120,20 @@ try {
   }
 
   run("git", ["checkout", "--", "tests/App.Tests/App.Tests.csproj"]);
+  snapshot();
+  write("src/appsettings.Local.json", "{\"ApiKey\":\"after\"}\n");
+  const ignoredProductionViolation = check(1);
+  if (!ignoredProductionViolation.includes("src/appsettings.Local.json")) {
+    throw new Error("An ignored production config change must not bypass the boundary.");
+  }
+
+  write("src/appsettings.Local.json", "{\"ApiKey\":\"before\"}\n");
+  snapshot();
+  write("src/obj/project.assets.json", "{\"generated\":true}\n");
+  if (!check().includes("WRITE_BOUNDARY_OK")) {
+    throw new Error("Ignored build output must not create a boundary violation.");
+  }
+
   snapshot();
   write("src/Service.cs", "public sealed class Service { public int Committed => 1; }\n");
   run("git", ["add", "src/Service.cs"]);

@@ -59,9 +59,13 @@ Trong phần arrange và verify, agent còn kiểm tra:
 
 Sau khi sinh mã, agent chạy:
 
-1. `dotnet build` cho test project và sửa lỗi biên dịch liên quan đến test vừa tạo.
-2. `dotnet test --filter` để chỉ chạy test class mục tiêu.
-3. Phân tích failure và sửa test nếu setup, mock hoặc expected value chưa đúng.
+1. Toàn test project trước khi ghi để lấy baseline pass/fail/skip.
+2. `dotnet build` cho test project và sửa lỗi biên dịch liên quan đến test vừa tạo.
+3. `dotnet test --filter` để chẩn đoán test class mục tiêu.
+4. Toàn test project sau thay đổi và so sánh với baseline để phát hiện regression mới.
+5. Phân tích failure và sửa test nếu setup, mock hoặc expected value chưa đúng.
+
+Nếu môi trường không cho phép chạy full project, agent phải báo `FULL_SUITE_NOT_VERIFIED` và không mô tả kết quả là đã production-ready.
 
 Agent không sửa production code hoặc đổi expected value chỉ để làm test pass. Nếu test chứng minh production code vi phạm contract, regression test được giữ ở trạng thái fail cùng expected, actual và căn cứ kết luận.
 
@@ -75,7 +79,7 @@ Tỷ lệ test pass không phải thước đo chất lượng của bộ test. 
 | Regression | Tái hiện một bug đã biết hoặc một sai lệch giữa production code và contract có bằng chứng. |
 | Characterization | Ghi nhận hành vi hiện tại khi chưa có nguồn độc lập để kết luận hành vi đó đúng hay sai. |
 
-Skill dùng implementation để tìm branch, nhưng không mặc định xem implementation là nguồn sự thật. Khi regression test fail vì code vi phạm contract, agent giữ test đó và báo bug. Khi contract chưa rõ, agent hỏi người dùng thay vì cố làm test pass hoặc tự kết luận production code có lỗi.
+Skill dùng implementation để tìm branch, nhưng không mặc định xem implementation là nguồn sự thật. Contract và Regression phải dẫn tới nguồn có thể kiểm tra lại như `docs/orders.md:42`, symbol/heading hoặc xác nhận rõ của người dùng. Khi regression test fail vì code vi phạm contract, agent giữ test đó và báo bug. Khi contract chưa rõ, agent hỏi người dùng thay vì cố làm test pass hoặc tự kết luận production code có lỗi.
 
 ## Yêu cầu
 
@@ -226,7 +230,7 @@ Quy trình gồm năm bước:
 2. Agent lập danh sách test case cho từng hành vi và nhánh mã cần thiết.
 3. Agent dừng lại để bạn rà soát danh sách test case.
 4. Sau khi được xác nhận, agent chụp trạng thái Git ban đầu rồi chỉ tạo mới hoặc cập nhật test class trong test project đã xác định.
-5. Agent chạy `dotnet build`, chạy đúng nhóm test vừa tạo bằng `dotnet test --filter`, rồi kiểm tra không có file ngoài phạm vi bị thay đổi.
+5. Agent chạy `dotnet build`, test mục tiêu, toàn test project so với baseline, rồi kiểm tra không có file ngoài phạm vi bị thay đổi.
 
 Ở bước rà soát, bạn có thể chỉnh danh sách trước khi cho phép sinh mã. Ví dụ:
 
@@ -243,7 +247,7 @@ Quy trình bảo vệ gồm bốn lớp:
 
 1. Agent nhận diện test project bằng cấu trúc solution, `IsTestProject`, `Microsoft.NET.Test.Sdk`, xUnit hoặc test project hiện có.
 2. Trước khi ghi file, agent chụp baseline của working tree và công bố **allowed write set**, ví dụ `tests/MyApp.Tests/**`.
-3. Sau khi sinh và chạy test, script đối chiếu trạng thái mới với baseline. Thay đổi production mới phát sinh hoặc Git `HEAD` bị đổi do agent tự commit sẽ trả về `WRITE_BOUNDARY_VIOLATION` cùng chi tiết chính xác.
+3. Sau khi sinh và chạy test, script đối chiếu trạng thái mới với baseline. Thay đổi production mới phát sinh, gồm source/config nhạy cảm bị Git ignore, hoặc Git `HEAD` bị đổi do agent tự commit sẽ trả về `WRITE_BOUNDARY_VIOLATION` cùng chi tiết chính xác. Output build phổ biến trong `bin`, `obj`, `TestResults`, `artifacts` và `coverage` được loại trừ.
 4. Agent không tự động revert file vi phạm vì working tree có thể chứa thay đổi của bạn; nó dừng và báo lại để bạn quyết định.
 
 Trong test project, agent mặc định chỉ được sửa file test, fixture, builder và test data. Các file sau vẫn cần bạn cho phép riêng:
@@ -285,6 +289,8 @@ Các rule hiện có bao gồm:
 - Build test project và chạy test theo filter sau khi sinh mã.
 
 Skill ưu tiên assertion library và mocking library đang có trong test project. Nếu dự án dùng FluentAssertions, Shouldly hoặc thư viện khác, agent sẽ giữ quy ước đó thay vì tự ý thêm thư viện mới. Khi dự án chưa có lựa chọn rõ ràng, skill dùng xUnit và Moq.
+
+Rule chuyên biệt hiện chỉ có cho service/domain và ASP.NET Core controller/endpoint. Repository, messaging, background worker, gRPC, EF Core và kiến trúc khác dùng general rule làm baseline và cần review thủ công; repository không tuyên bố hỗ trợ production tự chủ cho mọi loại dự án .NET.
 
 ## Nguyên tắc viết test
 
@@ -361,11 +367,36 @@ Sau khi bạn xác nhận, agent sẽ cập nhật test file rồi chạy các l
 ```bash
 dotnet build tests/MyApp.Tests/MyApp.Tests.csproj
 dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --filter "FullyQualifiedName~OrderServiceTests"
+dotnet test tests/MyApp.Tests/MyApp.Tests.csproj --no-build
 ```
 
 Kết quả cuối cùng cần nêu rõ file nào đã thay đổi, lệnh nào đã chạy, test nào pass, test nào fail và failure đó là test defect, production defect hay contract chưa rõ.
 
 Agent cũng phải chạy write-boundary check. Nếu có file ngoài test project bị thay đổi kể từ baseline, kết quả phải nêu `WRITE_BOUNDARY_VIOLATION` và đường dẫn vi phạm; agent không được âm thầm sửa tiếp hoặc tự revert thay đổi chưa rõ chủ sở hữu.
+
+## Đánh giá chất lượng đầu ra
+
+Repository có sáu fixture trong `evals/cases/` cho contract/implementation lệch nhau, boundary value, authorization 401/403, async cancellation, Characterization, nhận diện test tổ chức theo feature và loại bỏ case suy đoán. Fixture thứ bảy trong `evals/generated-tests/` chạy test C# do forward-test sinh trên implementation đúng, rồi đổi project reference sang seeded mutant `>= 100` → `> 100`; release chỉ pass khi test tại boundary bắt được mutant.
+
+Mỗi release phải forward-test bằng task mới, chỉ đưa target, contract và test hiện hữu cho agent; không đưa `eval.json`. Lưu nguyên văn report vào `evals/results/`, rồi chạy:
+
+```bash
+node scripts/test-evaluate-test-case-reports.mjs
+node scripts/evaluate-test-case-reports.mjs
+node scripts/test-generated-test-fixture.mjs
+```
+
+Scorer kiểm tra test case bắt buộc, case trùng/suy đoán bị cấm, classification và căn cứ có thể truy vết. Đây là quality gate cho test-case analysis; build, target test, full-suite comparison và write boundary vẫn là gate riêng khi sinh mã C#. Nếu repository đã có coverage hoặc mutation tooling, skill phải chạy đúng tooling đó cho target; nếu chưa có, skill không tự thêm package và báo `EFFECTIVENESS_NOT_MEASURED` thay vì tuyên bố đã đo khả năng bắt lỗi.
+
+## Phiên bản và phát hành
+
+Phiên bản hiện tại nằm trong `VERSION`; thay đổi được ghi trong `CHANGELOG.md`. Repository dùng semantic versioning:
+
+- Patch: sửa rule, ví dụ hoặc validator mà không đổi workflow công khai.
+- Minor: thêm fixture, rule hoặc capability tương thích ngược.
+- Major: đổi output contract, approval gate hoặc write-boundary semantics không tương thích.
+
+Chỉ phát hành khi validator, boundary tests, eval scorer, behavioral reports và skills CLI discovery đều pass.
 
 ## Cập nhật skill
 
@@ -443,7 +474,16 @@ Nếu project đã lỗi từ trước, xử lý build blocker trước rồi m�
 ├── .github/
 │   ├── workflows/validate-skills.yml
 │   └── CODEOWNERS
+├── evals/
+│   ├── cases/
+│   ├── generated-tests/
+│   ├── results/
+│   └── EVALUATION.md
 ├── scripts/
+│   ├── evaluate-test-case-reports.mjs
+│   ├── test-evaluate-test-case-reports.mjs
+│   ├── test-generated-test-fixture.mjs
+│   ├── test-production-write-boundary.mjs
 │   └── validate-skills.mjs
 ├── skills/
 │   ├── generate-test-cases/
@@ -465,12 +505,14 @@ Nếu project đã lỗi từ trước, xử lý build blocker trước rồi m�
 │   └── AGENTS-SNIPPET.md
 ├── .gitignore
 ├── AGENTS.md
+├── CHANGELOG.md
 ├── CLAUDE.md
-└── README.md
+├── README.md
+└── VERSION
 ```
 
 `AGENTS.md` cung cấp hướng dẫn chung cho các coding agent có hỗ trợ file này. `CLAUDE.md` là entry point dành cho Claude Code. Metadata trong `agents/openai.yaml` giúp Codex hiển thị skill rõ hơn trong giao diện. File `templates/AGENTS-SNIPPET.md` là đoạn cấu hình có thể chép vào dự án C# sử dụng các skill.
 
 Khi sửa một rule chung, cần đồng bộ nội dung tương ứng ở cả `skills/generate-test-cases/rules/general/` và `skills/generate-tests/rules/tests/general/` để hai skill không áp dụng hai bộ tiêu chí khác nhau.
 
-GitHub Actions chạy `scripts/validate-skills.mjs` và kiểm tra discovery bằng `npx skills` trên mỗi push hoặc pull request. Script xác minh frontmatter, tên thư mục, metadata Codex, nội dung general rule giữa hai skill và một số lỗi tương thích đã biết.
+GitHub Actions chạy validator, write-boundary tests, behavioral eval scorer và kiểm tra discovery bằng phiên bản `skills` CLI đã pin trên mỗi push hoặc pull request. Validator xác minh frontmatter, tên thư mục, metadata Codex, general rule đồng bộ, fixture schema và các quality invariant bắt buộc.

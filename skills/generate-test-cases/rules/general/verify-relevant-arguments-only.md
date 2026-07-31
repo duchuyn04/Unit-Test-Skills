@@ -22,7 +22,7 @@ public void DisplayGreeting_ShowsSpecialGreetingOnNewYearsDay()
     _userGreeter.DisplayGreeting();
 
     _userPrompterMock.Verify(x => x.UpdatePrompt(
-        "Hi Frank Sinatra! Happy New Year!", It.IsAny<TitleBar>(), It.IsAny<PromptStyle>()), Times.Once);
+        "Hi Frank Sinatra! Happy New Year!", TitleBar.Main, PromptStyle.Highlight), Times.Once);
 }
 ```
 
@@ -53,14 +53,14 @@ Chỉ xác minh mọi argument khi tất cả đều liên quan đến hành vi:
 
 ```csharp
 [Fact]
-public void DisplayGreeting_ShowsSpecialGreetingOnNewYearsDay()
+public void DisplayCriticalAlert_UsesMainTitleAndErrorStyle()
 {
-    _clock.SetTime(NewYearsDay);
+    var alert = new Alert("Payment failed", TitleBar.Main, PromptStyle.Error);
 
-    _userGreeter.DisplayGreeting();
+    _alertPresenter.Display(alert);
 
     _userPrompterMock.Verify(x => x.UpdatePrompt(
-        "Hi Frank Sinatra! Happy New Year!", It.IsAny<TitleBar>(), It.IsAny<PromptStyle>()), Times.Once);
+        "Payment failed", TitleBar.Main, PromptStyle.Error), Times.Once);
 }
 ```
 

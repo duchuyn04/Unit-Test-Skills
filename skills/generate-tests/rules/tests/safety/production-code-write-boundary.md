@@ -10,6 +10,8 @@ Trước lần ghi file đầu tiên:
 2. Công bố thư mục test project sẽ là **allowed write set**.
 3. Resolve `scripts/production-write-boundary.mjs` tương đối từ thư mục chứa `SKILL.md`, chụp trạng thái Git ban đầu và lưu state ngoài repository. Không giả định thư mục skill nằm bên trong repository đang được test.
 
+Script theo dõi cả file tracked, untracked và file source/config nhạy cảm bị Git ignore. Các thư mục output phổ biến như `bin`, `obj`, `TestResults`, `artifacts` và `coverage` được loại khỏi kiểm tra file ignored để build không tạo false positive.
+
 Mặc định chỉ được tạo hoặc sửa file mã kiểm thử, fixture, builder và test data nằm trong test project đã xác định.
 
 Yêu cầu sinh test cũng không cấp quyền tạo commit. Script lưu Git `HEAD` tại thời điểm snapshot và coi mọi thay đổi `HEAD` trước bước check là vi phạm phạm vi.

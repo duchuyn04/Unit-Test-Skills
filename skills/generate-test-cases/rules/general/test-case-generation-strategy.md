@@ -7,11 +7,11 @@ tags: tests, test-cases, strategy, coverage, branches
 
 ## Chiến lược tạo test case
 
-Áp dụng nghiêm ngặt tiêu chí INCLUDE/EXCLUDE để tạo test case có ý nghĩa, bao phủ mọi nhánh mã mà không trùng lặp.
+Áp dụng nghiêm ngặt tiêu chí INCLUDE/EXCLUDE để tạo test case có ý nghĩa. Dùng branch để tìm hành vi nhưng chỉ giữ branch tạo ra kết quả quan sát được, thực thi contract hoặc kiểm soát rủi ro có căn cứ.
 
 ### INCLUDE:
-- Mỗi nhánh mã và kết quả riêng biệt, gồm luồng thành công và xử lý lỗi.
-- Mỗi giá trị trả về hoặc exception riêng mà method có thể tạo ra.
+- Mỗi hành vi theo contract và mỗi kết quả quan sát được riêng biệt, gồm luồng thành công và xử lý lỗi.
+- Mỗi giá trị trả về hoặc exception riêng khi chúng thuộc public contract, invariant hoặc rủi ro thực tế có căn cứ.
 - Với HTTP method: tách riêng status 400, 401 và 403, không gộp chúng.
 - Chỉ dùng status code cụ thể.
 - **Validation constraint**: tạo test case NEGATIVE cho từng validation annotation, dùng input không hợp lệ phải bị validation từ chối.
@@ -23,6 +23,8 @@ tags: tests, test-cases, strategy, coverage, branches
 - Trường hợp suy đoán như Unicode hiếm hoặc payload rất lớn, trừ khi mã xử lý rõ ràng các trường hợp đó.
 - Đối số null, trừ khi parameter là nullable (`T?`) hoặc mã có guard rõ ràng.
 - Test trùng cùng nhánh mã, cùng nguyên nhân và cùng kết quả quan sát được, kể cả khi chúng ném cùng exception type.
+
+Với straight-line transformation không có branch, chọn input đại diện nhỏ nhất kích hoạt toàn bộ chuỗi biến đổi và assertion output cuối. Không tách một test cho từng lệnh như `Trim`, `ToLowerInvariant` hoặc `Replace` nếu contract không định nghĩa chúng thành hành vi độc lập.
 
 Không gộp chỉ vì các nhánh ném cùng exception type. Hai validation branch cùng ném `ArgumentException` vẫn cần test riêng nếu chúng đại diện cho điều kiện hoặc contract khác nhau.
 
@@ -58,7 +60,7 @@ public void Calculate_NullInput_ThrowsException() { }
 
 ### QUAN TRỌNG: Method private/protected
 
-Khi method gọi method private/protected, phải bao phủ gián tiếp mọi luồng thực thi bằng các input khác nhau truyền vào public method.
+Khi method gọi method private/protected, chỉ bao phủ gián tiếp các luồng tạo ra hành vi quan sát được khác nhau bằng input truyền vào public method. Không tạo test chỉ để chạm một branch nội bộ không làm thay đổi contract.
 
 ### Cách quyết định
 

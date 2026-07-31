@@ -4,6 +4,7 @@ import process from "node:process";
 
 const repositoryRoot = process.cwd();
 const skillsRoot = path.join(repositoryRoot, "skills");
+const evalsRoot = path.join(repositoryRoot, "evals", "cases");
 const errors = [];
 const allowedFrontmatterKeys = new Set([
   "name",
@@ -110,6 +111,49 @@ function validateGeneralRulesAreSynchronized() {
   }
 }
 
+function validateBehavioralEvalFixtures() {
+  if (!fs.existsSync(evalsRoot)) {
+    errors.push("Thiếu evals/cases/");
+    return;
+  }
+  const fixtureDirectories = fs
+    .readdirSync(evalsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  if (fixtureDirectories.length < 6) {
+    errors.push(`Behavioral eval chỉ có ${fixtureDirectories.length} fixture, cần ít nhất 6`);
+  }
+  for (const fixtureName of fixtureDirectories) {
+    const fixtureRoot = path.join(evalsRoot, fixtureName);
+    const manifestPath = path.join(fixtureRoot, "eval.json");
+    if (!fs.existsSync(manifestPath)) {
+      errors.push(`${fixtureName}: thiếu eval.json`);
+      continue;
+    }
+    let manifest;
+    try {
+      manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    } catch (error) {
+      errors.push(`${fixtureName}: eval.json không hợp lệ (${error.message})`);
+      continue;
+    }
+    if (manifest.id !== fixtureName) errors.push(`${fixtureName}: id trong eval.json không khớp`);
+    if (!manifest.target || !fs.existsSync(path.join(fixtureRoot, manifest.target))) {
+      errors.push(`${fixtureName}: target không tồn tại '${manifest.target ?? ""}'`);
+    }
+    for (const requirement of manifest.required ?? []) {
+      if (!requirement.name && !requirement.namePattern) {
+        errors.push(`${fixtureName}: required case thiếu name hoặc namePattern`);
+      }
+      if (!requirement.type) errors.push(`${fixtureName}: required case thiếu type`);
+      if (!["Characterization", "Contract", "Regression"].includes(requirement.type)) {
+        errors.push(`${fixtureName}: loại test không hợp lệ '${requirement.type}'`);
+      }
+    }
+  }
+}
+
 if (!fs.existsSync(skillsRoot)) {
   errors.push("Thiếu thư mục skills/");
 } else {
@@ -128,6 +172,20 @@ if (!fs.existsSync(skillsRoot)) {
 }
 
 validateGeneralRulesAreSynchronized();
+validateBehavioralEvalFixtures();
+
+for (const requiredEvalPath of [
+  "scripts/evaluate-test-case-reports.mjs",
+  "scripts/test-evaluate-test-case-reports.mjs",
+  "scripts/test-generated-test-fixture.mjs",
+  "evals/generated-tests/App.Tests/App.Tests.csproj",
+  "evals/generated-tests/App.Tests/DiscountPolicyTests.cs",
+  "evals/generated-tests/App.Mutant/DiscountPolicy.cs",
+]) {
+  if (!fs.existsSync(path.join(repositoryRoot, requiredEvalPath))) {
+    errors.push(`Thiếu generated-test evaluation artifact: ${requiredEvalPath}`);
+  }
+}
 
 const allSkillContent = normalize(
   read("skills/generate-test-cases/SKILL.md") +
@@ -152,6 +210,22 @@ for (const skillName of ["generate-test-cases", "generate-tests"]) {
   }
 }
 
+const contractRule = read(
+  "skills/generate-test-cases/rules/general/contract-first-bug-discovery.md",
+);
+if (!contractRule.includes("đường dẫn tương đối kèm dòng, heading hoặc symbol")) {
+  errors.push("Contract rule chưa yêu cầu căn cứ có thể truy vết");
+}
+
+const argumentRule = read(
+  "skills/generate-test-cases/rules/general/verify-relevant-arguments-only.md",
+);
+const wrongExample = argumentRule.match(/\*\*Không đúng:\*\*[\s\S]*?```csharp([\s\S]*?)```/)?.[1]?.trim();
+const rightExample = argumentRule.match(/\*\*Đúng:\*\*[\s\S]*?```csharp([\s\S]*?)```/)?.[1]?.trim();
+if (!wrongExample || !rightExample || wrongExample === rightExample) {
+  errors.push("Rule argument matching có ví dụ sai/đúng bị thiếu hoặc trùng nhau");
+}
+
 const executionRule = read(
   "skills/generate-tests/rules/tests/post-generation/test-execution-verification.md",
 );
@@ -160,6 +234,17 @@ if (executionRule.includes("Không bàn giao test đang fail")) {
 }
 if (!executionRule.includes("regression test đang fail")) {
   errors.push("Quy tắc hậu kiểm chưa cho phép giữ regression test fail có căn cứ");
+}
+if (!executionRule.includes("FULL_SUITE_NOT_VERIFIED") ||
+    !executionRule.includes("luôn chạy toàn test project")) {
+  errors.push("Quy tắc hậu kiểm chưa bắt buộc full-suite comparison");
+}
+
+const effectivenessRulePath =
+  "skills/generate-tests/rules/tests/post-generation/test-effectiveness-verification.md";
+if (!fs.existsSync(path.join(repositoryRoot, effectivenessRulePath)) ||
+    !read(effectivenessRulePath).includes("EFFECTIVENESS_NOT_MEASURED")) {
+  errors.push("Thiếu rule xác minh test effectiveness");
 }
 
 const generateTestsSkill = read("skills/generate-tests/SKILL.md");
@@ -186,10 +271,14 @@ if (!fs.existsSync(path.join(repositoryRoot, safetyRulePath))) {
 
 if (!fs.existsSync(path.join(repositoryRoot, boundaryScriptPath))) {
   errors.push("generate-tests thiếu production-write-boundary.mjs");
+} else if (!read(boundaryScriptPath).includes("collectIgnoredPolicyPaths")) {
+  errors.push("Write boundary chưa theo dõi file source/config bị Git ignore");
 }
 for (const requiredReference of [
   "safety/production-code-write-boundary.md",
   "scripts/production-write-boundary.mjs",
+  "test-effectiveness-verification.md",
+  "EFFECTIVENESS_NOT_MEASURED",
   "TESTABILITY_BLOCKER",
   "WRITE_BOUNDARY_VIOLATION",
 ]) {

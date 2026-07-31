@@ -1,0 +1,15 @@
+{
+  "id": "characterization-only",
+  "skill": "generate-test-cases",
+  "target": "src/SlugService.cs",
+  "minimumCaseCount": 1,
+  "maximumCaseCount": 1,
+  "required": [
+    {
+      "namePattern": "^Create_.*(OuterWhitespace|OuterSpaces).*(Spaces|MixedCase).*(NormalizedSlug|HyphenSeparatedValue)$",
+      "type": "Characterization",
+      "evidenceIncludes": ["src/SlugService.cs:5"]
+    }
+  ],
+  "forbiddenNamePatterns": ["Null", "Unicode", "LargePayload", "Throws"]
+}

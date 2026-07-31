@@ -27,5 +27,14 @@ jobs:
           node --check skills/generate-tests/scripts/production-write-boundary.mjs
           node scripts/test-production-write-boundary.mjs
 
+      - name: Verify behavioral evaluation harness
+        run: |
+          node --check scripts/evaluate-test-case-reports.mjs
+          node scripts/test-evaluate-test-case-reports.mjs
+          node scripts/evaluate-test-case-reports.mjs
+
+      - name: Verify generated tests kill seeded mutant
+        run: node scripts/test-generated-test-fixture.mjs
+
       - name: Verify skills CLI discovery
-        run: npx --yes skills@latest add . --list
+        run: npx --yes skills@1.5.20 add . --list
